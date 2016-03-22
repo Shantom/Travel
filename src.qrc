@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="map">images/map.jpg</file>
+        <file alias="mainIcon">images/Travel_Transportation.png</file>
+        <file alias="MapIcon">images/MapIcon.png</file>
+    </qresource>
+</RCC>
