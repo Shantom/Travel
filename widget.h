@@ -52,6 +52,8 @@ private slots:
 
     void on_comboBoxEnd_currentTextChanged(const QString &arg1);
 
+    void on_pushButtonStart_clicked();
+
 private:
     Ui::Widget *ui;
 };

@@ -26,6 +26,10 @@ void Passenger::setPolicy(int p)
 {
     policy=p;
 }
+int Passenger::getPolicy()
+{
+    return policy;
+}
 
 void Passenger::setLimitTime(QTime L)
 {

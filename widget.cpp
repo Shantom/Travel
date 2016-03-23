@@ -3,6 +3,7 @@
 #include "ui_widget.h"
 #include <QListWidgetItem>
 #include <QRegExp>
+#include <QMessageBox>
 QStringList cityList({"北京","天津","成都","哈尔滨","大连","威海",
                       "银川","呼和浩特","乌鲁木齐",
                       "济南","西安","台北","六安"});
@@ -15,6 +16,7 @@ Widget::Widget(QWidget *parent) :
 
     m_Psg.setEnd("天津");
     m_Psg.setStart("北京");
+    m_Psg.setPolicy(Passenger::timeLimitCost);
 
     ui->checkBoxSequence->setChecked(true);//默认有顺序
     ui->listWidgetYet->addItems(cityList);
@@ -65,6 +67,7 @@ void Widget::on_pushButtonRemove_clicked()//按钮 >>
     QListWidgetItem *curItem=ui->listWidgetSeleted->takeItem(curRow);
     curItem->setText(curItem->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(0,curItem);//插入到第一行
+    ui->listWidgetYet->setCurrentItem(curItem);
 }
 
 void Widget::on_pushButtonUp_clicked()//按钮 ↑
@@ -172,4 +175,26 @@ void Widget::on_checkBoxSequence_toggled(bool checked)
 void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//还没有卵用
 {
     ui->label->setFocus();
+}
+
+void Widget::on_pushButtonStart_clicked()
+{
+    QString plcy[3]={"最少费用","最短时间","限时最少费用"};
+    QString strResult;
+    strResult+=(tr("起点：")+m_Psg.getStart()+"\n");
+    strResult+=(tr("终点：")+m_Psg.getEnd()+"\n");
+    strResult+=(tr("策略：")+plcy[m_Psg.getPolicy()]+"\n");
+    if(m_Psg.getPolicy()==Passenger::timeLimitCost)
+        strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");
+    strResult+=(tr("途经城市：")+"\n");
+    if(ui->listWidgetSeleted->count()==0)
+        strResult+="无\n";
+    else
+        for(int i=0;i<ui->listWidgetSeleted->count();++i)
+        {
+            strResult+=ui->listWidgetSeleted->item(i)->text()+"\n";
+        }
+
+
+    QMessageBox::information(this,"旅客信息",strResult);
 }
