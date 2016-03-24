@@ -9,7 +9,7 @@ Route::Route(QWidget *parent) :
 {
     ui->setupUi(this);
     QPixmap pMap("://map");
-    qDebug()<<ui->label->size();
+//    qDebug()<<ui->label->size();
     pMap=pMap.scaled(QSize(967,750));
     ui->label->setPixmap(pMap);
 }

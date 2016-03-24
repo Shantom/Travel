@@ -23,9 +23,12 @@ public:
     QString getEnd();
     void setPolicy(int p);
     int getPolicy();
-    void setLimitTime(QTime L);
+    void setLimitTime(double L);
+    QTime getLimitTime();
     void setWayCities(QList<QPair<QString, double>> W);
+    QList<QPair<QString, double>> getWayCities();
     void setSequence(bool checked);
+    bool isSequence();
 
 
 private:

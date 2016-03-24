@@ -54,6 +54,8 @@ private slots:
 
     void on_pushButtonStart_clicked();
 
+    void on_checkBoxCycle_toggled(bool checked);
+
 private:
     Ui::Widget *ui;
 };

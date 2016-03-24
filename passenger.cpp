@@ -31,9 +31,14 @@ int Passenger::getPolicy()
     return policy;
 }
 
-void Passenger::setLimitTime(QTime L)
+void Passenger::setLimitTime(double L)
 {
-    limitTime=L;
+    limitTime=QTime(L,60*(L-(int)L));
+}
+
+QTime Passenger::getLimitTime()
+{
+    return limitTime;
 }
 
 void Passenger::setWayCities(QList<QPair<QString, double>> W)
@@ -41,7 +46,17 @@ void Passenger::setWayCities(QList<QPair<QString, double>> W)
     wayCities=W;
 }
 
+QList<QPair<QString, double>>Passenger::getWayCities()
+{
+    return wayCities;
+}
+
+
 void Passenger::setSequence(bool checked)
 {
     sequence=checked;
+}
+bool Passenger::isSequence()
+{
+    return sequence;
 }

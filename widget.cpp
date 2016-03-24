@@ -4,6 +4,7 @@
 #include <QListWidgetItem>
 #include <QRegExp>
 #include <QMessageBox>
+#include <QDebug>
 QStringList cityList({"北京","天津","成都","哈尔滨","大连","威海",
                       "银川","呼和浩特","乌鲁木齐",
                       "济南","西安","台北","六安"});
@@ -108,7 +109,6 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
     if(this->isVisible())
         ui->comboBoxEnd->addItem(m_Psg.getStart());
 
-
     m_Psg.setStart(arg1);
 
 }
@@ -172,9 +172,10 @@ void Widget::on_checkBoxSequence_toggled(bool checked)
     }
 }
 
-void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//还没有卵用
+void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)
 {
     ui->label->setFocus();
+    m_Psg.setLimitTime(arg1);
 }
 
 void Widget::on_pushButtonStart_clicked()
@@ -186,15 +187,38 @@ void Widget::on_pushButtonStart_clicked()
     strResult+=(tr("策略：")+plcy[m_Psg.getPolicy()]+"\n");
     if(m_Psg.getPolicy()==Passenger::timeLimitCost)
         strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");
-    strResult+=(tr("途经城市：")+"\n");
+    strResult+=(tr("途经城市：")+(m_Psg.isSequence()?
+                                 tr("（有顺序）"):tr("（无顺序）"))+"\n");
     if(ui->listWidgetSeleted->count()==0)
         strResult+="无\n";
     else
         for(int i=0;i<ui->listWidgetSeleted->count();++i)
         {
-            strResult+=ui->listWidgetSeleted->item(i)->text()+"\n";
+            QRegExp numModel("\\d+\\.?\\d*");//不带括号
+            QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
+            QString name=ui->listWidgetSeleted->item(i)->text().remove(numModelWithPara);//提取地名
+            numModel.indexIn(ui->listWidgetSeleted->item(i)->text());
+            double stayTime=numModel.cap().toDouble();//提取数字
+            QList<QPair<QString, double>> tmp;
+            tmp.append(QPair<QString, double>(name,stayTime));
+            m_Psg.setWayCities(tmp);
+            strResult+=name+tr(" (%1时)").arg(stayTime)+"\n";
         }
 
 
     QMessageBox::information(this,"旅客信息",strResult);
+}
+
+void Widget::on_checkBoxCycle_toggled(bool checked)
+{
+    ui->comboBoxEnd->setEnabled(!checked);//禁用终点框
+
+    if(checked)//起点终点相同，即禁用状态
+    {
+
+    }
+    else
+    {
+
+    }
 }
