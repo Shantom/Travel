@@ -102,14 +102,10 @@ void Widget::on_pushButtonDown_clicked()//按钮 ↓
 
 void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
 {
-    //if(this->isVisible())
-    {
-        itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
-        ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
-        ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
-        ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
-
-    }
+    itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
+    ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
+    ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
+    ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
 
     int curIndex=ui->comboBoxEnd->findText(arg1);//End中找到一样的
     ui->comboBoxEnd->removeItem(curIndex);//然后删掉
@@ -119,15 +115,13 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
     m_Psg.setStart(arg1);
 
 }
+
 void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)
 {
-    //if(this->isVisible())
-    {
-        itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
-        ui->listWidgetYet->insertItem(cityToInt[m_Psg.getEnd()], itemList[cityToInt[m_Psg.getEnd()]]);//恢复之前的终点
-        ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
-        ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
-    }
+    itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
+    ui->listWidgetYet->insertItem(cityToInt[m_Psg.getEnd()], itemList[cityToInt[m_Psg.getEnd()]]);//恢复之前的终点
+    ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
+    ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
 
     int curIndex=ui->comboBoxStart->findText(arg1);//Start中找到一样的
     ui->comboBoxStart->removeItem(curIndex);//然后删掉
@@ -136,6 +130,7 @@ void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)
 
     m_Psg.setEnd(arg1);
 }
+
 void Widget::on_radioButtonFare_clicked()
 {
     m_Psg.setPolicy(Passenger::minTime);
@@ -175,7 +170,6 @@ void Widget::on_checkBoxSequence_toggled(bool checked)
 
 void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)
 {
-    ui->label->setFocus();
     m_Psg.setLimitTime(arg1);
 }
 
@@ -190,13 +184,14 @@ void Widget::on_pushButtonStart_clicked()
         strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");//未找到QTime到QString的方法
     strResult+=(tr("途经城市：")+(m_Psg.isSequence()?
                                  tr("（有顺序）"):tr("（无顺序）"))+"\n");
+
+    QRegExp numModel("\\d+\\.?\\d*");//不带括号
+    QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
     if(ui->listWidgetSeleted->count()==0)//如果没有途经城市
         strResult+="无\n";
     else//有途径城市
         for(int i=0;i<ui->listWidgetSeleted->count();++i)
         {
-            QRegExp numModel("\\d+\\.?\\d*");//不带括号
-            QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
             QString name=ui->listWidgetSeleted->item(i)->text().remove(numModelWithPara);//提取地名
             numModel.indexIn(ui->listWidgetSeleted->item(i)->text());
             double stayTime=numModel.cap().toDouble();//提取数字
@@ -205,7 +200,6 @@ void Widget::on_pushButtonStart_clicked()
             m_Psg.setWayCities(tmp);
             strResult+=name+tr(" (%1时)").arg(stayTime)+"\n";
         }
-
 
     QMessageBox::information(this,"旅客信息",strResult);
 }
@@ -216,11 +210,16 @@ void Widget::on_checkBoxCycle_toggled(bool checked)
 
     if(checked)//起点终点相同，即禁用状态
     {
-        m_Psg.setEnd(ui->comboBoxStart->currentText());
-        ui->listWidgetYet->addItem(ui->comboBoxEnd->currentText());
+        QString curEnd=ui->comboBoxEnd->currentText();
+        ui->listWidgetYet->insertItem(0,itemList[cityToInt[curEnd]]);
+        m_Psg.setEnd(m_Psg.getStart());
     }
     else
     {
-
+        QString curEnd=ui->comboBoxEnd->currentText();
+        m_Psg.setEnd(curEnd);
+        itemList[cityToInt[curEnd]]->setText(itemList[cityToInt[curEnd]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
+        ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[curEnd]]));//删除右侧
+        ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[curEnd]]));//删除左侧
     }
 }
