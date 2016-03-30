@@ -5,30 +5,42 @@
 #include <QRegExp>
 #include <QMessageBox>
 #include <QDebug>
-QStringList cityList({"北京","天津","成都","哈尔滨","大连","威海",
-                      "银川","呼和浩特","乌鲁木齐",
-                      "济南","西安","台北","六安"});
+#include <QMap>
+
+
+
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    cityList.append({"北京","天津","成都","哈尔滨","大连","威海",
+                              "银川","呼和浩特","乌鲁木齐",
+                              "济南","西安","台北","六安"});
+    int i=0;
+    for(auto a:cityList)
+    {
+        cityToInt[a]=i++;
+        itemList.append(new QListWidgetItem(a));
+    }
+    for(auto a:itemList)
+    {
+        ui->listWidgetYet->addItem(a);//0
+    }
+    ui->listWidgetYet->setCurrentRow(0);//默认选中第一行，防止未选择程序崩溃//=·
+
 
     m_Psg.setEnd("天津");
     m_Psg.setStart("北京");
     m_Psg.setPolicy(Passenger::timeLimitCost);
 
     ui->checkBoxSequence->setChecked(true);//默认有顺序
-    ui->listWidgetYet->addItems(cityList);
-    ui->listWidgetYet->setCurrentRow(0);//默认选中第一行，防止未选择程序崩溃
-//    ui->listWidgetSeleted->setSortingEnabled(true);
-//    ui->listWidgetYet->setSortingEnabled(true);
+    //ui->listWidgetYet->addItems(cityList);//0
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
     tmp.removeFirst();
     ui->comboBoxEnd->addItems(tmp);
-    //ui->doubleSpinBoxLimit->setEnabled(false);
     ui->doubleSpinBoxLimit->setSingleStep(0.5);//一步半小时
     ui->doubleSpinBoxLimit->setSuffix(" 小时");
     ui->radioButtonTimeFare->setChecked(true);//默认策略三
@@ -52,7 +64,7 @@ void Widget::on_pushButtonAdd_clicked()//按钮 <<
     if(ui->listWidgetYet->count()==0)
         return;//防止列表空程序崩溃
     double limitTime=ui->doubleSpinBoxStay->value();
-    ui->doubleSpinBoxStay->setValue(0);//恢复为0
+    ui->doubleSpinBoxStay->setValue(0);//停留时间的框框恢复为0
     int curRow=ui->listWidgetYet->currentRow();
     QListWidgetItem *curItem=ui->listWidgetYet->takeItem(curRow);//从右侧列表删除并保存指针
     curItem->setText(curItem->text()+=QString("(%1)").arg(limitTime));
@@ -92,16 +104,11 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
 {
     //if(this->isVisible())
     {
-        ui->listWidgetYet->insertItem(0,m_Psg.getStart());
+        itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
+        ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
+        ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
+        ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
 
-        QList<QListWidgetItem *> preStart=ui->listWidgetSeleted->findItems(arg1,Qt::MatchStartsWith);
-        if(!preStart.isEmpty())
-           for (auto a:preStart)
-                   delete a;
-        preStart=ui->listWidgetYet->findItems(arg1,Qt::MatchStartsWith);
-        if(!preStart.isEmpty())
-            for (auto a:preStart)
-                    delete a;
     }
 
     int curIndex=ui->comboBoxEnd->findText(arg1);//End中找到一样的
@@ -116,16 +123,10 @@ void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)
 {
     //if(this->isVisible())
     {
-        ui->listWidgetYet->insertItem(0,m_Psg.getEnd());
-
-        QList<QListWidgetItem *> preEnd=ui->listWidgetSeleted->findItems(arg1,Qt::MatchStartsWith);
-        if(!preEnd.isEmpty())
-            for (auto a:preEnd)
-                delete a;
-        preEnd=ui->listWidgetYet->findItems(arg1,Qt::MatchStartsWith);
-        if(!preEnd.isEmpty())
-            for (auto a:preEnd)
-                delete a;
+        itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
+        ui->listWidgetYet->insertItem(cityToInt[m_Psg.getEnd()], itemList[cityToInt[m_Psg.getEnd()]]);//恢复之前的终点
+        ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
+        ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
     }
 
     int curIndex=ui->comboBoxStart->findText(arg1);//Start中找到一样的
@@ -186,12 +187,12 @@ void Widget::on_pushButtonStart_clicked()
     strResult+=(tr("终点：")+m_Psg.getEnd()+"\n");
     strResult+=(tr("策略：")+plcy[m_Psg.getPolicy()]+"\n");
     if(m_Psg.getPolicy()==Passenger::timeLimitCost)
-        strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");
+        strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");//未找到QTime到QString的方法
     strResult+=(tr("途经城市：")+(m_Psg.isSequence()?
                                  tr("（有顺序）"):tr("（无顺序）"))+"\n");
-    if(ui->listWidgetSeleted->count()==0)
+    if(ui->listWidgetSeleted->count()==0)//如果没有途经城市
         strResult+="无\n";
-    else
+    else//有途径城市
         for(int i=0;i<ui->listWidgetSeleted->count();++i)
         {
             QRegExp numModel("\\d+\\.?\\d*");//不带括号
@@ -215,7 +216,8 @@ void Widget::on_checkBoxCycle_toggled(bool checked)
 
     if(checked)//起点终点相同，即禁用状态
     {
-
+        m_Psg.setEnd(ui->comboBoxStart->currentText());
+        ui->listWidgetYet->addItem(ui->comboBoxEnd->currentText());
     }
     else
     {

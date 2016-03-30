@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <passenger.h>
+#include <Qmap>
+#include <QListWidgetItem>
 
 namespace Ui {
 class Widget;
@@ -58,6 +60,10 @@ private slots:
 
 private:
     Ui::Widget *ui;
+    QStringList cityList;
+    QMap<QString,int> cityToInt;
+    QList<QListWidgetItem*> itemList;
+
 };
 
 #endif // WIDGET_H
