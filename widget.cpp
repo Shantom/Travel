@@ -36,6 +36,7 @@ Widget::Widget(QWidget *parent) :
     m_Psg.setPolicy(Passenger::timeLimitCost);
 
     ui->checkBoxSequence->setChecked(true);//默认有顺序
+    ui->doubleSpinBoxLimit->setValue(10);//默认限时十个小时
     //ui->listWidgetYet->addItems(cityList);//0
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
@@ -54,7 +55,7 @@ Widget::~Widget()
     delete ui;
 }
 
-void Widget::on_pushButtonShowMap_clicked()
+void Widget::on_pushButtonShowMap_clicked()//点击 显示地图 按钮
 {
     emit SendOpen();//释放显示地图信号
 }
@@ -100,13 +101,15 @@ void Widget::on_pushButtonDown_clicked()//按钮 ↓
 
 }
 
-void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
+void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)//起点改变
 {
+    /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
     ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
     ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
 
+    /*对终点下拉框进行适配*/
     int curIndex=ui->comboBoxEnd->findText(arg1);//End中找到一样的
     ui->comboBoxEnd->removeItem(curIndex);//然后删掉
     if(this->isVisible())
@@ -116,13 +119,15 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)
 
 }
 
-void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)
+void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)//终点改变
 {
+    /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(cityToInt[m_Psg.getEnd()], itemList[cityToInt[m_Psg.getEnd()]]);//恢复之前的终点
     ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
     ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
 
+    /*对终点下拉框进行适配*/
     int curIndex=ui->comboBoxStart->findText(arg1);//Start中找到一样的
     ui->comboBoxStart->removeItem(curIndex);//然后删掉
     if(this->isVisible())
@@ -131,27 +136,27 @@ void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)
     m_Psg.setEnd(arg1);
 }
 
-void Widget::on_radioButtonFare_clicked()
+void Widget::on_radioButtonFare_clicked()//选中 最少费用
 {
     m_Psg.setPolicy(Passenger::minTime);
     ui->doubleSpinBoxLimit->setEnabled(false);
 
 }
 
-void Widget::on_radioButtonTime_clicked()
+void Widget::on_radioButtonTime_clicked()//选中 最短时间
 {
     m_Psg.setPolicy(Passenger::minCost);
     ui->doubleSpinBoxLimit->setEnabled(false);
 }
 
-void Widget::on_radioButtonTimeFare_clicked()
+void Widget::on_radioButtonTimeFare_clicked()//选中 限时最短时间
 {
     m_Psg.setPolicy(Passenger::timeLimitCost);
     ui->doubleSpinBoxLimit->setEnabled(true);
 
 }
 
-void Widget::on_checkBoxSequence_toggled(bool checked)
+void Widget::on_checkBoxSequence_toggled(bool checked)//点击 是否有顺序的复选框
 {
     m_Psg.setSequence(checked);
 
@@ -168,12 +173,12 @@ void Widget::on_checkBoxSequence_toggled(bool checked)
     }
 }
 
-void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)
+void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//限时最短时间数值修改
 {
     m_Psg.setLimitTime(arg1);
 }
 
-void Widget::on_pushButtonStart_clicked()
+void Widget::on_pushButtonStart_clicked()//点击开始按钮
 {
     QString plcy[3]={"最少费用","最短时间","限时最少费用"};
     QString strResult;
@@ -181,7 +186,7 @@ void Widget::on_pushButtonStart_clicked()
     strResult+=(tr("终点：")+m_Psg.getEnd()+"\n");
     strResult+=(tr("策略：")+plcy[m_Psg.getPolicy()]+"\n");
     if(m_Psg.getPolicy()==Passenger::timeLimitCost)
-        strResult+=(tr("限时：%1小时").arg(ui->doubleSpinBoxLimit->value())+"\n");//未找到QTime到QString的方法
+        strResult+=(tr("限时：%1小时").arg(m_Psg.getLimitTime())+"\n");
     strResult+=(tr("途经城市：")+(m_Psg.isSequence()?
                                  tr("（有顺序）"):tr("（无顺序）"))+"\n");
 
@@ -201,10 +206,10 @@ void Widget::on_pushButtonStart_clicked()
             strResult+=name+tr(" (%1时)").arg(stayTime)+"\n";
         }
 
-    QMessageBox::information(this,"旅客信息",strResult);
+    QMessageBox::question(this,"旅客信息",strResult,QMessageBox::Discard|QMessageBox::Apply);
 }
 
-void Widget::on_checkBoxCycle_toggled(bool checked)
+void Widget::on_checkBoxCycle_toggled(bool checked)//点击 是否Cycle 复选框
 {
     ui->comboBoxEnd->setEnabled(!checked);//禁用终点框
 

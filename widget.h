@@ -31,7 +31,6 @@ private slots:
 
     void on_pushButtonShowMap_clicked();
 
-
     void on_pushButtonAdd_clicked();
 
     void on_pushButtonRemove_clicked();
