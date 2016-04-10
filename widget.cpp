@@ -1,6 +1,8 @@
 #include "widget.h"
 #include "passenger.h"
 #include "ui_widget.h"
+#include "graph.h"
+#include "timetable.h"
 #include <QListWidgetItem>
 #include <QRegExp>
 #include <QMessageBox>
@@ -15,9 +17,11 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    cityList.append({"北京","天津","成都","哈尔滨","大连","威海",
+    cityList.append({"北京","天津","成都","哈尔滨","大连","武汉",
                               "银川","呼和浩特","乌鲁木齐",
                               "济南","西安","台北","六安"});
+    TimeTable T;
+
     int i=0;
     for(auto a:cityList)
     {
@@ -26,25 +30,26 @@ Widget::Widget(QWidget *parent) :
     }
     for(auto a:itemList)
     {
-        ui->listWidgetYet->addItem(a);//0
+        ui->listWidgetYet->addItem(a);
     }
-    ui->listWidgetYet->setCurrentRow(0);//默认选中第一行，防止未选择程序崩溃//=·
+    ui->listWidgetYet->setCurrentRow(0);//默认选中第一行，防止未选择程序崩溃
 
 
-    m_Psg.setEnd("天津");
-    m_Psg.setStart("北京");
-    m_Psg.setPolicy(Passenger::timeLimitCost);
+    m_Psg.setStart(cityList.at(0));
+    m_Psg.setEnd(cityList.at(1));
+    ui->radioButtonFare->setChecked(true);
 
     ui->checkBoxSequence->setChecked(true);//默认有顺序
     ui->doubleSpinBoxLimit->setValue(10);//默认限时十个小时
-    //ui->listWidgetYet->addItems(cityList);//0
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
     tmp.removeFirst();
     ui->comboBoxEnd->addItems(tmp);
     ui->doubleSpinBoxLimit->setSingleStep(0.5);//一步半小时
     ui->doubleSpinBoxLimit->setSuffix(" 小时");
-    ui->radioButtonTimeFare->setChecked(true);//默认策略三
+    ui->radioButtonFare->setChecked(true);//默认最少费用策略
+    m_Psg.setPolicy(Passenger::minCost);
+    ui->doubleSpinBoxLimit->setEnabled(false);
     ui->doubleSpinBoxStay->setSuffix(" 小时");
     ui->doubleSpinBoxStay->setSingleStep(0.5);
 
@@ -106,16 +111,22 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)//起点改
     /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
-    ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除右侧
-    ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除左侧
+    ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[arg1]]));//删除左侧
+    ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[arg1]]));//删除右侧
 
-    /*对终点下拉框进行适配*/
-    int curIndex=ui->comboBoxEnd->findText(arg1);//End中找到一样的
-    ui->comboBoxEnd->removeItem(curIndex);//然后删掉
-    if(this->isVisible())
-        ui->comboBoxEnd->addItem(m_Psg.getStart());
+    if(!ui->checkBoxCycle->isChecked())//起点终点不一样
+    {
+        /*对终点下拉框进行适配*/
+        int curIndex=ui->comboBoxEnd->findText(arg1);//End中找到一样的
+        ui->comboBoxEnd->removeItem(curIndex);//然后删掉
+        if(this->isVisible())
+            ui->comboBoxEnd->addItem(m_Psg.getStart());
+
+    }
 
     m_Psg.setStart(arg1);
+    if(ui->checkBoxCycle->isChecked())//起点终点一样
+        m_Psg.setEnd(arg1);
 
 }
 
@@ -138,14 +149,13 @@ void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)//终点改�
 
 void Widget::on_radioButtonFare_clicked()//选中 最少费用
 {
-    m_Psg.setPolicy(Passenger::minTime);
+    m_Psg.setPolicy(Passenger::minCost);
     ui->doubleSpinBoxLimit->setEnabled(false);
-
 }
 
 void Widget::on_radioButtonTime_clicked()//选中 最短时间
 {
-    m_Psg.setPolicy(Passenger::minCost);
+    m_Psg.setPolicy(Passenger::minTime);
     ui->doubleSpinBoxLimit->setEnabled(false);
 }
 
@@ -169,7 +179,6 @@ void Widget::on_checkBoxSequence_toggled(bool checked)//点击 是否有顺序�
     {
         ui->pushButtonUp->setEnabled(false);
         ui->pushButtonDown->setEnabled(false);
-
     }
 }
 
@@ -180,33 +189,73 @@ void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//限时最短时间
 
 void Widget::on_pushButtonStart_clicked()//点击开始按钮
 {
+
     QString plcy[3]={"最少费用","最短时间","限时最少费用"};
     QString strResult;
+
     strResult+=(tr("起点：")+m_Psg.getStart()+"\n");
     strResult+=(tr("终点：")+m_Psg.getEnd()+"\n");
     strResult+=(tr("策略：")+plcy[m_Psg.getPolicy()]+"\n");
     if(m_Psg.getPolicy()==Passenger::timeLimitCost)
         strResult+=(tr("限时：%1小时").arg(m_Psg.getLimitTime())+"\n");
     strResult+=(tr("途经城市：")+(m_Psg.isSequence()?
-                                 tr("（有顺序）"):tr("（无顺序）"))+"\n");
-
+                                 tr("（有顺序）"):tr("（无顺序）"))+"\n\n");
     QRegExp numModel("\\d+\\.?\\d*");//不带括号
     QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
+
     if(ui->listWidgetSeleted->count()==0)//如果没有途经城市
+    {
         strResult+="无\n";
+        m_Psg.setWayCities(QList<QPair<QString, double>>());
+    }
+
     else//有途径城市
+        {
+        QList<QPair<QString, double>> tmp;
+
         for(int i=0;i<ui->listWidgetSeleted->count();++i)
         {
             QString name=ui->listWidgetSeleted->item(i)->text().remove(numModelWithPara);//提取地名
             numModel.indexIn(ui->listWidgetSeleted->item(i)->text());
             double stayTime=numModel.cap().toDouble();//提取数字
-            QList<QPair<QString, double>> tmp;
             tmp.append(QPair<QString, double>(name,stayTime));
             m_Psg.setWayCities(tmp);
             strResult+=name+tr(" (%1时)").arg(stayTime)+"\n";
         }
+    }
 
-    QMessageBox::question(this,"旅客信息",strResult,QMessageBox::Discard|QMessageBox::Apply);
+    QMessageBox message(QMessageBox::Question,"旅客信息",strResult,QMessageBox::Yes|QMessageBox::No);
+    message.exec();
+    if(message.clickedButton()==message.button(QMessageBox::Yes))
+    {
+        if(m_Psg.getPolicy()==Passenger::minCost)
+        {
+
+            QString detailRout=getRouteString_MinCost(m_Psg);
+            QMessageBox::information(this,"路线",detailRout);
+        }
+    }
+}
+
+QString Widget::getRouteString_MinCost(Passenger Psg)
+{
+    Graph G;
+    G.CreateGraph_MinCost();
+    vector<QString> route;
+    vector<QString> midCities;
+
+    auto tmpQayCities=Psg.getWayCities();
+    for(auto a:tmpQayCities)
+        midCities.push_back(a.first);
+
+    int cost=G.LeastCost(Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
+
+    QString detailRout;
+    for(auto a:route)
+        detailRout+=(a+'\n');
+    detailRout+=(Widget::tr("费用:%1").arg(cost));
+
+    return detailRout;
 }
 
 void Widget::on_checkBoxCycle_toggled(bool checked)//点击 是否Cycle 复选框

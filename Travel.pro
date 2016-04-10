@@ -4,6 +4,9 @@
 #
 #-------------------------------------------------
 
+#CONFIG+=precompile_header
+#PRECOMPILED_HEADER = stable.h
+
 QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -16,12 +19,15 @@ SOURCES += main.cpp\
         widget.cpp \
     route.cpp \
     passenger.cpp \
-    timetable.cpp
+    timetable.cpp \
+    graph.cpp
 
 HEADERS  += widget.h \
     route.h \
     passenger.h \
-    timetable.h
+    timetable.h \
+    graph.h \
+    stable.h
 
 FORMS    += widget.ui \
     route.ui

@@ -16,7 +16,7 @@ class Passenger
 {
 public:
     Passenger();
-    enum POLICY{minTime,minCost,timeLimitCost};
+    enum POLICY{minCost,minTime,timeLimitCost};
     void setStart(QString s);
     QString getStart();
     void setEnd(QString e);
