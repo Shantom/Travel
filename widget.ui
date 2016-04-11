@@ -183,7 +183,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>停留时间</string>
+          <string>至少停留时间</string>
          </property>
         </widget>
        </item>
@@ -349,18 +349,29 @@
        </item>
       </layout>
      </item>
-     <item alignment="Qt::AlignRight">
-      <widget class="QPushButton" name="pushButtonShowMap">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>显示地图</string>
-       </property>
-      </widget>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>关于本程序</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonShowMap">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>显示地图</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

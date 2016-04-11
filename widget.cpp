@@ -278,18 +278,22 @@ QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
         if(preArriTime>section.departtime||preArriTime<tmp)//判断是否需要第二天再走
         {
             day++;
-            preArriTime=section.arrivetime;
             detailRout+=(tr("第%1天").arg(day)+'\n');
         }
 
-        if(section.arrivetime<section.departtime)//过夜了
-            day++;
+        preArriTime=section.arrivetime;
 
         detailRout+=(section.trainnumber+' ');
         detailRout+=(section.departcity+tr("到")+section.arrivecity+' ');
         detailRout+=(section.departtime.toString("HH:mm")+tr("到")+section.arrivetime.toString("HH:mm"));
         detailRout+=(tr(" 费用：%1").arg(section.price));
         detailRout+=('\n');
+
+        if(section.arrivetime<section.departtime)//过夜了
+        {
+            day++;
+            detailRout+=(tr("第%1天").arg(day)+'\n');
+        }
     }
 
     detailRout+=(Widget::tr("总费用:%1").arg(cost));
@@ -315,4 +319,12 @@ void Widget::on_checkBoxCycle_toggled(bool checked)//点击 是否Cycle 复选�
         ui->listWidgetSeleted->takeItem(ui->listWidgetSeleted->row(itemList[cityToInt[curEnd]]));//删除右侧
         ui->listWidgetYet->takeItem(ui->listWidgetYet->row(itemList[cityToInt[curEnd]]));//删除左侧
     }
+}
+
+void Widget::on_pushButton_clicked()
+{
+    QString strAbout="本程序为算法与数据结构的课程设计\n";
+    strAbout+="参与人员：\nShantom\nrartxt\n";
+    strAbout+="联系方式：\nsalpha1345@gmail.com";
+    QMessageBox::about(this,"关于本程序",strAbout);
 }

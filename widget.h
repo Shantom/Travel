@@ -58,6 +58,8 @@ private slots:
 
     void on_checkBoxCycle_toggled(bool checked);
 
+    void on_pushButton_clicked();
+
 private:
     Ui::Widget *ui;
     QStringList cityList;
