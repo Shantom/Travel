@@ -51,8 +51,22 @@ int TimeTable::getMinPrice(QString start,QString goal)
 //    sort(priceList.begin(),priceList.end());//如果order by影响效率则用这一段
 }
 
-TimeTable::Info getInfo_MinCost(QString start, QString goal)
+Info TimeTable::getInfo_MinCost(QString start, QString goal)
 {
+    QSqlQuery query;
+    query.exec(QString("SELECT trainnumber, departtime, arrivetime, price, id  FROM travel "
+                       "WHERE departcity = '%1' AND arrivecity = '%2' order by price")
+               .arg(full2Short[start],full2Short[goal]));
+    query.next();
+    Info tmp;
+    tmp.trainnumber=query.value(0).toString();
+    tmp.departcity=start;
+    tmp.arrivecity=goal;
+    tmp.departtime=query.value(1).toTime();
+    tmp.arrivetime=query.value(2).toTime();
+    tmp.price=query.value(3).toInt();
+    tmp.id=query.value(4).toInt();
+    return tmp;
 
 }
 

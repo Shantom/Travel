@@ -203,8 +203,15 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
     QRegExp numModel("\\d+\\.?\\d*");//不带括号
     QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
 
+    QList<double> stayTime;
+    //stayTime.append(0);
     if(ui->listWidgetSeleted->count()==0)//如果没有途经城市
     {
+        if(ui->checkBoxCycle->isChecked())//如果起点终点一样而且没有途经城市
+        {
+            QMessageBox::critical(this,tr("错误"),tr("没有选择途经城市"));
+            return;
+        }
         strResult+="无\n";
         m_Psg.setWayCities(QList<QPair<QString, double>>());
     }
@@ -217,10 +224,10 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
         {
             QString name=ui->listWidgetSeleted->item(i)->text().remove(numModelWithPara);//提取地名
             numModel.indexIn(ui->listWidgetSeleted->item(i)->text());
-            double stayTime=numModel.cap().toDouble();//提取数字
-            tmp.append(QPair<QString, double>(name,stayTime));
+            stayTime.append(numModel.cap().toDouble());//提取数字
+            tmp.append(QPair<QString, double>(name,stayTime.at(i)));
             m_Psg.setWayCities(tmp);
-            strResult+=name+tr(" (%1时)").arg(stayTime)+"\n";
+            strResult+=name+tr(" (%1时)").arg(stayTime.at(i))+"\n";
         }
     }
 
@@ -231,29 +238,61 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
         if(m_Psg.getPolicy()==Passenger::minCost)
         {
 
-            QString detailRout=getRouteString_MinCost(m_Psg);
+            QString detailRout=getRouteString_MinCost(m_Psg,stayTime);
             QMessageBox::information(this,"路线",detailRout);
         }
     }
 }
 
-QString Widget::getRouteString_MinCost(Passenger Psg)
+/*计算出需要打印出来的字符串*/
+QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
 {
     Graph G;
     G.CreateGraph_MinCost();
     vector<QString> route;
     vector<QString> midCities;
 
-    auto tmpQayCities=Psg.getWayCities();
-    for(auto a:tmpQayCities)
+    auto tmpWayCities=Psg.getWayCities();
+    for(auto a:tmpWayCities)
+    {
         midCities.push_back(a.first);
+    }
 
     int cost=G.LeastCost(Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
 
     QString detailRout;
-    for(auto a:route)
-        detailRout+=(a+'\n');
-    detailRout+=(Widget::tr("费用:%1").arg(cost));
+
+    QTime preArriTime(23,59,59);
+    int day=0;
+    size_t j=0;//停留时间的标尺
+    for(auto i=route.begin();i<route.end()-1;++i)
+    {
+        Info section=TimeTable::getInfo_MinCost(*i,*(i+1));
+
+        QTime tmp;
+        if(j<midCities.size()&&midCities.at(j)==*i)
+        {
+            tmp=preArriTime;
+            preArriTime=preArriTime.addSecs(3600*stayTime.at(j++));//加上停留时间
+        }
+        if(preArriTime>section.departtime||preArriTime<tmp)//判断是否需要第二天再走
+        {
+            day++;
+            preArriTime=section.arrivetime;
+            detailRout+=(tr("第%1天").arg(day)+'\n');
+        }
+
+        if(section.arrivetime<section.departtime)//过夜了
+            day++;
+
+        detailRout+=(section.trainnumber+' ');
+        detailRout+=(section.departcity+tr("到")+section.arrivecity+' ');
+        detailRout+=(section.departtime.toString("HH:mm")+tr("到")+section.arrivetime.toString("HH:mm"));
+        detailRout+=(tr(" 费用：%1").arg(section.price));
+        detailRout+=('\n');
+    }
+
+    detailRout+=(Widget::tr("总费用:%1").arg(cost));
 
     return detailRout;
 }

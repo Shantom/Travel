@@ -17,7 +17,7 @@ class Widget : public QWidget
 public:
     explicit Widget(QWidget *parent = 0);
     ~Widget();
-    QString getRouteString_MinCost(Passenger Psg);
+    QString getRouteString_MinCost(Passenger Psg, QList<double> stayTime);
 
 private:
     Passenger m_Psg;
