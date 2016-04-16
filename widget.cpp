@@ -3,6 +3,7 @@
 #include "ui_widget.h"
 #include "graph.h"
 #include "timetable.h"
+#include "timer.h"
 #include <QListWidgetItem>
 #include <QRegExp>
 #include <QMessageBox>
@@ -17,6 +18,8 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+
+
     cityList.append({"北京","天津","成都","哈尔滨","大连","武汉",
                               "银川","呼和浩特","乌鲁木齐",
                               "济南","西安","台北","六安"});
@@ -52,6 +55,7 @@ Widget::Widget(QWidget *parent) :
     ui->doubleSpinBoxLimit->setEnabled(false);
     ui->doubleSpinBoxStay->setSuffix(" 小时");
     ui->doubleSpinBoxStay->setSingleStep(0.5);
+
 
 }
 
@@ -204,7 +208,6 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
     QRegExp numModelWithPara("\\(\\d+\\.?\\d*\\)");//带括号
 
     QList<double> stayTime;
-    //stayTime.append(0);
     if(ui->listWidgetSeleted->count()==0)//如果没有途经城市
     {
         if(ui->checkBoxCycle->isChecked())//如果起点终点一样而且没有途经城市
@@ -237,15 +240,20 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
     {
         if(m_Psg.getPolicy()==Passenger::minCost)
         {
-
-            QString detailRout=getRouteString_MinCost(m_Psg,stayTime);
-            QMessageBox::information(this,"路线",detailRout);
+            QString detailRout=getRouteString_MinCost(m_Psg,stayTime,statuses);
+            QMessageBox::information(this,"路线",detailRout);//
+            m_timer=new Timer(2*((statuses.end()-1)->startTime));
+            connect(m_timer,SIGNAL(timerStart()),this,SLOT(RecvTimerStart()));
+            connect(m_timer,SIGNAL(timerStopped()),this,SLOT(RecvTimerStop()));
+            connect(m_timer,SIGNAL(timerTick(int)),this,SLOT(RecvTimerTick(int)));
+            ui->lcdNumberTime->display(QString("%1:00").arg(iniTime-24));
+            m_timer->StartTimer();
         }
     }
 }
 
 /*计算出需要打印出来的字符串*/
-QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
+QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime, QList<Status> &statuses)
 {
     Graph G;
     G.CreateGraph_MinCost();
@@ -262,17 +270,21 @@ QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
 
     QString detailRout;
 
-    QTime preArriTime(23,59,59);
+    QTime preArriTime(23,59,59);//上一个城市的到达时间
     int day=0;
     size_t j=0;//停留时间的标尺
-    for(auto i=route.begin();i<route.end()-1;++i)
+    Info iniInfo=TimeTable::getInfo_MinCost(route[0],route[1]);
+    iniTime=iniInfo.departtime.hour()+double(iniInfo.departtime.minute())/60+24;
+
+    for(auto i=route.begin();i<route.end()-1;++i)//route保存包括起点终点的所有城市名
     {
+
         Info section=TimeTable::getInfo_MinCost(*i,*(i+1));
 
-        QTime tmp;
-        if(j<midCities.size()&&midCities.at(j)==*i)
+
+        QTime tmp=preArriTime;
+        if(j<midCities.size()&&midCities.at(j)==*i)//如果当前城市为停留城市
         {
-            tmp=preArriTime;
             preArriTime=preArriTime.addSecs(3600*stayTime.at(j++));//加上停留时间
         }
         if(preArriTime>section.departtime||preArriTime<tmp)//判断是否需要第二天再走
@@ -280,6 +292,13 @@ QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
             day++;
             detailRout+=(tr("第%1天").arg(day)+'\n');
         }
+
+        Status curStatus;
+        //坐车时的状态
+        curStatus.transport=section.trainnumber;
+        curStatus.curCity=section.departcity+'-'+section.arrivecity;
+        curStatus.startTime=section.departtime.hour()+double(section.departtime.minute())/60+24*day-iniTime;
+        statuses.append(curStatus);
 
         preArriTime=section.arrivetime;
 
@@ -294,6 +313,12 @@ QString Widget::getRouteString_MinCost(Passenger Psg,QList<double> stayTime)
             day++;
             detailRout+=(tr("第%1天").arg(day)+'\n');
         }
+        //停留时的状态
+        curStatus.transport=((i+2)!=route.end())?"游玩中":"到达终点";
+        curStatus.curCity=section.arrivecity;
+        curStatus.startTime=section.arrivetime.hour()+double(section.arrivetime.minute())/60+day*24-iniTime;
+        statuses.append(curStatus);
+
     }
 
     detailRout+=(Widget::tr("总费用:%1").arg(cost));
@@ -321,10 +346,70 @@ void Widget::on_checkBoxCycle_toggled(bool checked)//点击 是否Cycle 复选�
     }
 }
 
-void Widget::on_pushButton_clicked()
+void Widget::on_pushButtonAbout_clicked()
 {
     QString strAbout="本程序为算法与数据结构的课程设计\n";
     strAbout+="参与人员：\nShantom\nrartxt\n";
     strAbout+="联系方式：\nsalpha1345@gmail.com";
     QMessageBox::about(this,"关于本程序",strAbout);
+}
+
+void Widget::RecvTimerStart()
+{
+    ui->checkBoxCycle->setEnabled(false);
+    ui->checkBoxSequence->setEnabled(false);
+    ui->comboBoxStart->setEnabled(false);
+    ui->comboBoxEnd->setEnabled(false);
+    ui->doubleSpinBoxLimit->setEnabled(false);
+    ui->doubleSpinBoxStay->setEnabled(false);
+    ui->pushButtonAdd->setEnabled(false);
+    ui->pushButtonDown->setEnabled(false);
+    ui->pushButtonRemove->setEnabled(false);
+    ui->pushButtonUp->setEnabled(false);
+    ui->pushButtonStart->setEnabled(false);
+    ui->radioButtonFare->setEnabled(false);
+    ui->radioButtonTime->setEnabled(false);
+    ui->radioButtonTimeFare->setEnabled(false);
+    days=1;
+}
+
+void Widget::RecvTimerStop()
+{
+    ui->checkBoxCycle->setEnabled(true);
+    ui->checkBoxSequence->setEnabled(true);
+    ui->comboBoxStart->setEnabled(true);
+    if(!ui->checkBoxCycle->isChecked())
+        ui->comboBoxEnd->setEnabled(true);
+    if(m_Psg.getPolicy()==Passenger::timeLimitCost)
+        ui->doubleSpinBoxLimit->setEnabled(true);
+    ui->doubleSpinBoxStay->setEnabled(true);
+    ui->pushButtonAdd->setEnabled(true);
+    ui->pushButtonDown->setEnabled(true);
+    ui->pushButtonRemove->setEnabled(true);
+    ui->pushButtonUp->setEnabled(true);
+    ui->pushButtonStart->setEnabled(true);
+    ui->radioButtonFare->setEnabled(true);
+    ui->radioButtonTime->setEnabled(true);
+    ui->radioButtonTimeFare->setEnabled(true);
+
+    QMessageBox::information(this,"到达","已到达目的地");
+}
+
+void Widget::RecvTimerTick(int time)
+{
+    for(auto a:statuses)
+    {
+        if(time*0.5>=a.startTime)
+            ui->labelCurStatus->setText(a.transport+' '+a.curCity);
+    }
+    double curTime=iniTime-24+time*0.5;
+    int hour=curTime;
+    int minute=(curTime-double(hour))*60;
+    if(hour>=24)
+    {
+        days=hour/24+1;
+        hour%=24;
+    }
+    ui->labelDays->setText(QString("第%1天").arg(days));
+    ui->lcdNumberTime->display(QString("%1:%2%3").arg(hour).arg(minute/10).arg(0));
 }

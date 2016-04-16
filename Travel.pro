@@ -20,14 +20,16 @@ SOURCES += main.cpp\
     route.cpp \
     passenger.cpp \
     timetable.cpp \
-    graph.cpp
+    graph.cpp \
+    timer.cpp
 
 HEADERS  += widget.h \
     route.h \
     passenger.h \
     timetable.h \
     graph.h \
-    stable.h
+    stable.h \
+    timer.h
 
 FORMS    += widget.ui \
     route.ui

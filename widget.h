@@ -1,10 +1,12 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include "timer.h"
 #include <QWidget>
 #include <passenger.h>
-#include <Qmap>
+#include <QMap>
 #include <QListWidgetItem>
+#include <QTimer>
 
 namespace Ui {
 class Widget;
@@ -17,7 +19,7 @@ class Widget : public QWidget
 public:
     explicit Widget(QWidget *parent = 0);
     ~Widget();
-    QString getRouteString_MinCost(Passenger Psg, QList<double> stayTime);
+    QString getRouteString_MinCost(Passenger Psg, QList<double> stayTime,QList<Status> &statuses);
 
 private:
     Passenger m_Psg;
@@ -26,6 +28,12 @@ signals:
     void SendOpen();
 
 public slots:
+
+    void RecvTimerStart();
+
+    void RecvTimerStop();
+
+    void RecvTimerTick(int time);
 
 
 private slots:
@@ -58,13 +66,17 @@ private slots:
 
     void on_checkBoxCycle_toggled(bool checked);
 
-    void on_pushButton_clicked();
+    void on_pushButtonAbout_clicked();
 
 private:
     Ui::Widget *ui;
     QStringList cityList;
     QMap<QString,int> cityToInt;
     QList<QListWidgetItem*> itemList;
+    QList<Status> statuses;
+    double iniTime;
+    int days;
+    Timer *m_timer;
 
 };
 
