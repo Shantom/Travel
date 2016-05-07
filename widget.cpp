@@ -21,8 +21,8 @@ Widget::Widget(QWidget *parent) :
 
 
     cityList.append({"北京","天津","成都","哈尔滨","大连","武汉",
-                              "银川","呼和浩特","乌鲁木齐",
-                              "济南","西安","台北","六安"});
+                     "银川","呼和浩特","乌鲁木齐",
+                     "济南","西安","台北","六安"});
     TimeTable T;
 
     int i=0;
@@ -55,7 +55,10 @@ Widget::Widget(QWidget *parent) :
     ui->doubleSpinBoxLimit->setEnabled(false);
     ui->doubleSpinBoxStay->setSuffix(" 小时");
     ui->doubleSpinBoxStay->setSingleStep(0.5);
-
+    m_timer=nullptr;
+    ui->pushButtonPause->setEnabled(false);
+    ui->lcdNumberTime->display("0:00");
+    days=1;
 
 }
 
@@ -112,6 +115,8 @@ void Widget::on_pushButtonDown_clicked()//按钮 ↓
 
 void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)//起点改变
 {
+//    days=1;//一旦修改了开始城市，就代表了重开
+
     /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(cityToInt[m_Psg.getStart()],itemList[cityToInt[m_Psg.getStart()]]);//恢复之前的起点
@@ -220,7 +225,7 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
     }
 
     else//有途径城市
-        {
+    {
         QList<QPair<QString, double>> tmp;
 
         for(int i=0;i<ui->listWidgetSeleted->count();++i)
@@ -241,10 +246,13 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
         if(m_Psg.getPolicy()==Passenger::minCost)
         {
             QString detailRout=getRouteString_MinCost(m_Psg,stayTime,statuses);
+            iniTime+=(days-1)*24;//for paused timer
             QMessageBox::information(this,"路线",detailRout);//
+            if(!m_timer)
+                delete m_timer;
             m_timer=new Timer(2*((statuses.end()-1)->startTime));
             connect(m_timer,SIGNAL(timerStart()),this,SLOT(RecvTimerStart()));
-            connect(m_timer,SIGNAL(timerStopped()),this,SLOT(RecvTimerStop()));
+            connect(m_timer,SIGNAL(timerStopped(bool)),this,SLOT(RecvTimerStop(bool)));
             connect(m_timer,SIGNAL(timerTick(int)),this,SLOT(RecvTimerTick(int)));
             ui->lcdNumberTime->display(QString("%1:00").arg(iniTime-24));
             m_timer->StartTimer();
@@ -370,29 +378,51 @@ void Widget::RecvTimerStart()
     ui->radioButtonFare->setEnabled(false);
     ui->radioButtonTime->setEnabled(false);
     ui->radioButtonTimeFare->setEnabled(false);
-    days=1;
+    ui->pushButtonPause->setEnabled(true);
 }
 
-void Widget::RecvTimerStop()
+void Widget::RecvTimerStop(bool isPaused)
 {
+
     ui->checkBoxCycle->setEnabled(true);
     ui->checkBoxSequence->setEnabled(true);
-    ui->comboBoxStart->setEnabled(true);
-    if(!ui->checkBoxCycle->isChecked())
-        ui->comboBoxEnd->setEnabled(true);
     if(m_Psg.getPolicy()==Passenger::timeLimitCost)
         ui->doubleSpinBoxLimit->setEnabled(true);
+    if(!ui->checkBoxCycle->isChecked())
+        ui->comboBoxEnd->setEnabled(true);
     ui->doubleSpinBoxStay->setEnabled(true);
     ui->pushButtonAdd->setEnabled(true);
     ui->pushButtonDown->setEnabled(true);
     ui->pushButtonRemove->setEnabled(true);
     ui->pushButtonUp->setEnabled(true);
-    ui->pushButtonStart->setEnabled(true);
     ui->radioButtonFare->setEnabled(true);
     ui->radioButtonTime->setEnabled(true);
     ui->radioButtonTimeFare->setEnabled(true);
+//    qDebug()<<ui->listWidgetSeleted->count();
+    for(int i=0;i<14;++i)
+        on_pushButtonRemove_clicked();
 
-    QMessageBox::information(this,"到达","已到达目的地");
+    if(isPaused)
+    {
+        QString curSta=ui->labelCurStatus->text();
+        QString curCity=QString(curSta[curSta.size()-2])+QString(curSta[curSta.size()-1]);
+        if(curCity=="尔滨")
+            curCity="哈尔滨";
+        else if(curCity=="浩特")
+            curCity="呼和浩特";
+        else if(curCity=="木齐")
+            curCity="乌鲁木齐";
+
+        ui->comboBoxStart->setCurrentText(curCity);
+        ui->pushButtonPause->setEnabled(true);
+    }
+    else
+    {
+        ui->pushButtonStart->setEnabled(true);
+        ui->comboBoxStart->setEnabled(true);
+        ui->pushButtonPause->setEnabled(false);
+        QMessageBox::information(this,"到达","已到达目的地");
+    }
 }
 
 void Widget::RecvTimerTick(int time)
@@ -412,4 +442,36 @@ void Widget::RecvTimerTick(int time)
     }
     ui->labelDays->setText(QString("第%1天").arg(days));
     ui->lcdNumberTime->display(QString("%1:%2%3").arg(hour).arg(minute/10).arg(0));
+}
+
+void Widget::on_pushButtonPause_clicked()
+{
+    m_timer->isPaused=!m_timer->isPaused;
+    if(m_timer->isPaused)
+    {
+        m_timer->StopTimer(true);//pause
+        ui->pushButtonPause->setText("继续");
+    }
+    else
+    {
+        on_pushButtonStart_clicked();
+        ui->pushButtonPause->setText("暂停");
+    }
+}
+
+void Widget::on_pushButtonRestart_clicked()
+{
+    days=1;//
+    if(m_timer)
+    {
+        m_timer->StopTimer(false);
+        delete m_timer;
+        m_timer=nullptr;
+    }
+    ui->labelCurStatus->setText("无");
+    ui->labelDays->setText("第N/A天");
+    ui->comboBoxStart->setCurrentText("北京");
+    ui->comboBoxEnd->setCurrentText("天津");
+    ui->checkBoxCycle->setChecked(false);
+    ui->lcdNumberTime->display("0:00");
 }

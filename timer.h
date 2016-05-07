@@ -9,10 +9,12 @@ class Timer : public QObject
     Q_OBJECT
 public:
     explicit Timer(double times, QObject *parent = 0);
+    bool isPaused;
     void StartTimer();
+    void StopTimer(bool isPause);
 signals:
     void timerTick(int timer);
-    void timerStopped();
+    void timerStopped(bool isPaused);
     void timerStart();
 public slots:
     void CountTimer();

@@ -31,7 +31,7 @@ public slots:
 
     void RecvTimerStart();
 
-    void RecvTimerStop();
+    void RecvTimerStop(bool isPaused);
 
     void RecvTimerTick(int time);
 
@@ -68,13 +68,17 @@ private slots:
 
     void on_pushButtonAbout_clicked();
 
+    void on_pushButtonPause_clicked();
+
+    void on_pushButtonRestart_clicked();
+
 private:
     Ui::Widget *ui;
     QStringList cityList;
     QMap<QString,int> cityToInt;
     QList<QListWidgetItem*> itemList;
     QList<Status> statuses;
-    double iniTime;
+    double iniTime;//with an extra 24 hours(i've forgot why)
     int days;
     Timer *m_timer;
 
