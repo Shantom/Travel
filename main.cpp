@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     Widget w;
-    w.setFixedSize(603,257);
+    w.setFixedSize(671,320);
     Route r;
 
     w.setWindowTitle("旅行模拟器");
