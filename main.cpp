@@ -18,7 +18,11 @@ int main(int argc, char *argv[])
     QIcon iconMap("://MapIcon");
     r.setWindowIcon(iconMap);
     QWidget::connect(&w,SIGNAL(SendOpen()),&r,SLOT(OpenMap()));
-
+    QWidget::connect(&w,SIGNAL(cityArrived(int)),&r,SLOT(on_cityArrived(int)));
+    QWidget::connect(&w,SIGNAL(wayPassed(int,int)),&r,SLOT(on_wayPassed(int,int)));
+    QWidget::connect(&w,SIGNAL(cityStaying(int)),&r,SLOT(on_cityStaying(int)));
+    QWidget::connect(&w,SIGNAL(wayPassing(int,int)),&r,SLOT(on_wayPassing(int,int)));
+    QWidget::connect(&w,SIGNAL(restartRoute()),&r,SLOT(on_restart()));
 
     w.show();
 

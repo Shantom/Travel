@@ -26,6 +26,11 @@ private:
 
 signals:
     void SendOpen();
+    void cityArrived(int);
+    void wayPassing(int,int);
+    void cityStaying(int);
+    void wayPassed(int,int);
+    void restartRoute();
 
 public slots:
 

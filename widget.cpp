@@ -9,7 +9,10 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QMap>
-
+#define swtName(city) if(city=="尔滨") city="哈尔滨"; else if(city=="浩特") city="呼和浩特"; \
+    else if(city=="木齐") city="乌鲁木齐"
+#define swtName_2(city) if(city=="哈尔") city="哈尔滨"; else if(city=="呼和") city="呼和浩特"; \
+    else if(city=="乌鲁") city="乌鲁木齐"
 
 
 
@@ -198,7 +201,8 @@ void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//限时最短时间
 
 void Widget::on_pushButtonStart_clicked()//点击开始按钮
 {
-
+    if(days==1)
+        emit restartRoute();
     QString plcy[3]={"最少费用","最短时间","限时最少费用"};
     QString strResult;
 
@@ -398,7 +402,6 @@ void Widget::RecvTimerStop(bool isPaused)
     ui->radioButtonFare->setEnabled(true);
     ui->radioButtonTime->setEnabled(true);
     ui->radioButtonTimeFare->setEnabled(true);
-//    qDebug()<<ui->listWidgetSeleted->count();
     for(int i=0;i<14;++i)
         on_pushButtonRemove_clicked();
 
@@ -406,12 +409,7 @@ void Widget::RecvTimerStop(bool isPaused)
     {
         QString curSta=ui->labelCurStatus->text();
         QString curCity=QString(curSta[curSta.size()-2])+QString(curSta[curSta.size()-1]);
-        if(curCity=="尔滨")
-            curCity="哈尔滨";
-        else if(curCity=="浩特")
-            curCity="呼和浩特";
-        else if(curCity=="木齐")
-            curCity="乌鲁木齐";
+        swtName(curCity);
 
         ui->comboBoxStart->setCurrentText(curCity);
         ui->pushButtonPause->setEnabled(true);
@@ -421,17 +419,56 @@ void Widget::RecvTimerStop(bool isPaused)
         ui->pushButtonStart->setEnabled(true);
         ui->comboBoxStart->setEnabled(true);
         ui->pushButtonPause->setEnabled(false);
-        QMessageBox::information(this,"到达","已到达目的地");
+        QMessageBox::information(this,"结束","旅途已结束");
     }
 }
 
 void Widget::RecvTimerTick(int time)
 {
+    QString preStatus=ui->labelCurStatus->text();
     for(auto a:statuses)
     {
         if(time*0.5>=a.startTime)
+        {
             ui->labelCurStatus->setText(a.transport+' '+a.curCity);
+        }
     }
+    QString curStatus=ui->labelCurStatus->text();
+
+    if(curStatus!=preStatus)//画图以及日志
+    {
+//        qDebug()<<preStatus;
+//        if(curStatus.startsWith("到达终点"))
+            qDebug()<<curStatus;
+        if(preStatus.startsWith("游玩中")||preStatus=="无"||preStatus.startsWith("到达终点"))
+        {
+            if(preStatus!="无"&&!preStatus.startsWith("到达终点"))
+            {
+                QString preCity=QString(preStatus[preStatus.size()-2])+QString(preStatus[preStatus.size()-1]);
+                swtName(preCity);
+                emit cityArrived(cityToInt[preCity]);
+            }
+            QString ACity=QString(curStatus.at(4))+QString(curStatus.at(5));
+            QString BCity=QString(curStatus.at(curStatus.size()-2))+QString(curStatus.at(curStatus.size()-1));
+            swtName(BCity);
+            swtName_2(ACity);
+            emit wayPassing(cityToInt[ACity],cityToInt[BCity]);
+        }
+        else
+        {
+            if(preStatus!="无"&&!preStatus.startsWith("到达终点"))
+            {
+                QString ACity=QString(preStatus.at(4))+QString(preStatus.at(5));
+                QString BCity=QString(preStatus.at(preStatus.size()-2))+QString(preStatus.at(preStatus.size()-1));
+                swtName(BCity);
+                swtName_2(ACity);
+                emit wayPassed(cityToInt[ACity],cityToInt[BCity]);
+            }
+            QString curCity=QString(curStatus[curStatus.size()-2])+QString(curStatus[curStatus.size()-1]);
+            emit cityStaying(cityToInt[curCity]);
+        }
+    }
+
     double curTime=iniTime-24+time*0.5;
     int hour=curTime;
     int minute=(curTime-double(hour))*60;
@@ -474,4 +511,5 @@ void Widget::on_pushButtonRestart_clicked()
     ui->comboBoxEnd->setCurrentText("天津");
     ui->checkBoxCycle->setChecked(false);
     ui->lcdNumberTime->display("0:00");
+    emit restartRoute();
 }
