@@ -67,6 +67,7 @@ void Route::on_restart()
 void Route::paintEvent(QPaintEvent *event)
 {
     QPixmap *tmp=(QPixmap *)ui->label->pixmap();
+    tmp->load("://map");
     QVector<QPoint> cityPoints={{912 ,370},{930, 398},{650, 645},
                                 {1090, 200},{1020, 395},{885, 635},
                                 {705, 430},{813, 370},{348, 248},
@@ -77,13 +78,6 @@ void Route::paintEvent(QPaintEvent *event)
     painter.setPen(pen);
     painter.drawPoints(cityPoints);//黑点表示未经过
 
-    QVector<QPoint> VisitedPoints;
-    for(auto i:visited)
-        VisitedPoints.push_back(cityPoints.at(i));
-    pen.setColor(Qt::red);
-    painter.setPen(pen);
-    painter.drawPoints(VisitedPoints);//红点表示已经过
-
     QVector<QLine> PassedLines;
     for(auto p:passed)
     {
@@ -93,7 +87,8 @@ void Route::paintEvent(QPaintEvent *event)
     pen.setWidth(5);
     pen.setStyle(Qt::DashDotLine);
     painter.setPen(pen);
-    painter.drawLines(PassedLines);//蓝线表示已经过
+    if(!PassedLines.empty())
+        painter.drawLines(PassedLines);//蓝线表示已经过
 
 
     if(isStay)//Point
@@ -113,6 +108,14 @@ void Route::paintEvent(QPaintEvent *event)
         painter.setPen(pen);
         painter.drawLine(cityPoints.at(passing.first),cityPoints.at(passing.second));
     }
+
+    QVector<QPoint> VisitedPoints;
+    for(auto i:visited)
+        VisitedPoints.push_back(cityPoints.at(i));
+    pen.setColor(Qt::red);
+    painter.setPen(pen);
+    painter.drawPoints(VisitedPoints);//红点表示已经过
+
 }
 
 void Route::OpenMap()
