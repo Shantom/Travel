@@ -420,6 +420,7 @@ void Widget::RecvTimerStop(bool isPaused)
         ui->comboBoxStart->setEnabled(true);
         ui->pushButtonPause->setEnabled(false);
         QMessageBox::information(this,"结束","旅途已结束");
+        emit restartRoute();
     }
 }
 
@@ -465,6 +466,7 @@ void Widget::RecvTimerTick(int time)
                 emit wayPassed(cityToInt[ACity],cityToInt[BCity]);
             }
             QString curCity=QString(curStatus[curStatus.size()-2])+QString(curStatus[curStatus.size()-1]);
+            swtName(curCity);
             emit cityStaying(cityToInt[curCity]);
         }
     }

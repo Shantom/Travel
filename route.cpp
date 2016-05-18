@@ -101,13 +101,6 @@ void Route::paintEvent(QPaintEvent *event)
             painter.drawPoint(cityPoints.at(visiting));
         }
     }
-    else if(passing.first!=-1)//Line
-    {
-        pen.setColor(Qt::green);
-        pen.setWidth(5);
-        painter.setPen(pen);
-        painter.drawLine(cityPoints.at(passing.first),cityPoints.at(passing.second));
-    }
 
     QVector<QPoint> VisitedPoints;
     for(auto i:visited)
@@ -115,6 +108,15 @@ void Route::paintEvent(QPaintEvent *event)
     pen.setColor(Qt::red);
     painter.setPen(pen);
     painter.drawPoints(VisitedPoints);//红点表示已经过
+
+    if(isStay==0&&passing.first!=-1)//Line
+    {
+        pen.setColor(Qt::green);
+        pen.setWidth(5);
+        painter.setPen(pen);
+        painter.drawLine(cityPoints.at(passing.first),cityPoints.at(passing.second));
+    }
+
 
 }
 

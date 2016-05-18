@@ -19,6 +19,7 @@ TimeTable::TimeTable()
     {
         db = QSqlDatabase::addDatabase("QMYSQL"); // 使用mysql数据库驱动
         db.setHostName("localhost");
+//        db.setHostName("121.42.209.206");
         db.setDatabaseName("travel"); // 数据库名称
         db.setUserName("root"); //  用户名
         db.setPassword("sushe322"); // 密码
