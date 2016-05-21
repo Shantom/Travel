@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QMap>
+#include <fstream>
 #define swtName(city) if(city=="尔滨") city="哈尔滨"; else if(city=="浩特") city="呼和浩特"; \
     else if(city=="木齐") city="乌鲁木齐"
 #define swtName_2(city) if(city=="哈尔") city="哈尔滨"; else if(city=="呼和") city="呼和浩特"; \
@@ -22,6 +23,7 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    logFile.open("/home/shantom/Desktop/travel.log",ios_base::app);
 
     cityList.append({"北京","天津","成都","哈尔滨","大连","武汉",
                      "银川","呼和浩特","乌鲁木齐",
@@ -45,7 +47,7 @@ Widget::Widget(QWidget *parent) :
     m_Psg.setEnd(cityList.at(1));
     ui->radioButtonFare->setChecked(true);
 
-    ui->checkBoxSequence->setChecked(true);//默认有顺序
+    ui->checkBoxSequence->setChecked(false);//默认有顺序
     ui->doubleSpinBoxLimit->setValue(10);//默认限时十个小时
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
@@ -72,6 +74,7 @@ Widget::~Widget()
 
 void Widget::on_pushButtonShowMap_clicked()//点击 显示地图 按钮
 {
+    logFile<<"显示地图"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     emit SendOpen();//释放显示地图信号
 }
 
@@ -86,22 +89,25 @@ void Widget::on_pushButtonAdd_clicked()//按钮 <<
     curItem->setText(curItem->text()+=QString("(%1)").arg(limitTime));
     ui->listWidgetSeleted->addItem(curItem);//添加到左侧列表
     ui->listWidgetSeleted->setCurrentItem(curItem);//默认选中刚添加的这一行防崩溃
+    logFile<<"按钮 <<:"<<(ui->listWidgetSeleted->currentItem()->text().toStdString())<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
 }
 
 void Widget::on_pushButtonRemove_clicked()//按钮 >>
 {
     if(ui->listWidgetSeleted->count()==0)
         return;//防止列表空程序崩溃
-    int curRow=ui->listWidgetSeleted->currentRow();
+    int curRow=ui->listWidgetSeleted->currentRow();    
     QListWidgetItem *curItem=ui->listWidgetSeleted->takeItem(curRow);
     curItem->setText(curItem->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(0,curItem);//插入到第一行
     ui->listWidgetYet->setCurrentItem(curItem);
+    logFile<<"按钮 >>:"<<ui->listWidgetYet->currentItem()->text().toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
 }
 
 void Widget::on_pushButtonUp_clicked()//按钮 ↑
 {
     int curRow=ui->listWidgetSeleted->currentRow();
+    logFile<<"按钮 ↑:"<<ui->listWidgetSeleted->item(curRow)->text().toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     QListWidgetItem *curItem=ui->listWidgetSeleted->takeItem(curRow);//先删除再插入到上一行
     ui->listWidgetSeleted->insertItem(curRow-1,curItem);
     ui->listWidgetSeleted->setCurrentItem(curItem);
@@ -110,6 +116,7 @@ void Widget::on_pushButtonUp_clicked()//按钮 ↑
 void Widget::on_pushButtonDown_clicked()//按钮 ↓
 {
     int curRow=ui->listWidgetSeleted->currentRow();
+    logFile<<"按钮 ↓:"<<ui->listWidgetSeleted->item(curRow)->text().toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     QListWidgetItem *curItem=ui->listWidgetSeleted->takeItem(curRow);//先删除再插入到下一行
     ui->listWidgetSeleted->insertItem(curRow+1,curItem);
     ui->listWidgetSeleted->setCurrentItem(curItem);
@@ -119,6 +126,7 @@ void Widget::on_pushButtonDown_clicked()//按钮 ↓
 void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)//起点改变
 {
 //    days=1;//一旦修改了开始城市，就代表了重开
+    logFile<<"起点修改:"<<arg1.toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
 
     /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
@@ -144,6 +152,8 @@ void Widget::on_comboBoxStart_currentTextChanged(const QString &arg1)//起点改
 
 void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)//终点改变
 {
+    logFile<<"终点修改:"<<arg1.toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     /*对途经城市框进行适配*/
     itemList[cityToInt[arg1]]->setText(itemList[cityToInt[arg1]]->text().remove(QRegExp("\\(\\d*\\.?\\d*\\)")));//删除括号数字
     ui->listWidgetYet->insertItem(cityToInt[m_Psg.getEnd()], itemList[cityToInt[m_Psg.getEnd()]]);//恢复之前的终点
@@ -161,18 +171,24 @@ void Widget::on_comboBoxEnd_currentTextChanged(const QString &arg1)//终点改�
 
 void Widget::on_radioButtonFare_clicked()//选中 最少费用
 {
+    logFile<<"策略修改:"<<"最少费用"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     m_Psg.setPolicy(Passenger::minCost);
     ui->doubleSpinBoxLimit->setEnabled(false);
 }
 
 void Widget::on_radioButtonTime_clicked()//选中 最短时间
 {
+    logFile<<"策略修改:"<<"最短时间"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     m_Psg.setPolicy(Passenger::minTime);
     ui->doubleSpinBoxLimit->setEnabled(false);
 }
 
 void Widget::on_radioButtonTimeFare_clicked()//选中 限时最短时间
 {
+    logFile<<"策略修改:"<<"限时最短时间"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     m_Psg.setPolicy(Passenger::timeLimitCost);
     ui->doubleSpinBoxLimit->setEnabled(true);
 
@@ -180,6 +196,8 @@ void Widget::on_radioButtonTimeFare_clicked()//选中 限时最短时间
 
 void Widget::on_checkBoxSequence_toggled(bool checked)//点击 是否有顺序的复选框
 {
+    logFile<<"有顺序的复选框修改:"<<(checked?"是":"否")<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     m_Psg.setSequence(checked);
 
     if(checked)
@@ -196,11 +214,15 @@ void Widget::on_checkBoxSequence_toggled(bool checked)//点击 是否有顺序�
 
 void Widget::on_doubleSpinBoxLimit_valueChanged(double arg1)//限时最短时间数值修改
 {
+    logFile<<"限时最短时间数值修改:"<<arg1<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     m_Psg.setLimitTime(arg1);
 }
 
 void Widget::on_pushButtonStart_clicked()//点击开始按钮
 {
+    logFile<<"点击开始"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     if(days==1)
         emit restartRoute();
     QString plcy[3]={"最少费用","最短时间","限时最少费用"};
@@ -247,20 +269,34 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
     message.exec();
     if(message.clickedButton()==message.button(QMessageBox::Yes))
     {
+        logFile<<"旅客信息:\n"<<strResult.toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+        QString detailRout;
         if(m_Psg.getPolicy()==Passenger::minCost)
         {
-            QString detailRout=getRouteString_MinCost(m_Psg,stayTime,statuses);
-            iniTime+=(days-1)*24;//for paused timer
-            QMessageBox::information(this,"路线",detailRout);//
-            if(!m_timer)
-                delete m_timer;
-            m_timer=new Timer(2*((statuses.end()-1)->startTime));
-            connect(m_timer,SIGNAL(timerStart()),this,SLOT(RecvTimerStart()));
-            connect(m_timer,SIGNAL(timerStopped(bool)),this,SLOT(RecvTimerStop(bool)));
-            connect(m_timer,SIGNAL(timerTick(int)),this,SLOT(RecvTimerTick(int)));
-            ui->lcdNumberTime->display(QString("%1:00").arg(iniTime-24));
-            m_timer->StartTimer();
+            detailRout=getRouteString_MinCost(m_Psg,stayTime,statuses);
         }
+        else if(m_Psg.getPolicy()==Passenger::minTime)
+        {
+            ;
+        }
+        else
+        {
+            ;
+        }
+        iniTime+=(days-1)*24;//for paused timer
+        QMessageBox::information(this,"路线",detailRout);//
+        if(!m_timer)
+            delete m_timer;
+        m_timer=new Timer(2*((statuses.end()-1)->startTime));
+        connect(m_timer,SIGNAL(timerStart()),this,SLOT(RecvTimerStart()));
+        connect(m_timer,SIGNAL(timerStopped(bool)),this,SLOT(RecvTimerStop(bool)));
+        connect(m_timer,SIGNAL(timerTick(int)),this,SLOT(RecvTimerTick(int)));
+        ui->lcdNumberTime->display(QString("%1:00").arg(iniTime-24));
+        m_timer->StartTimer();
+    }
+    else
+    {
+        logFile<<"点击取消"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     }
 }
 
@@ -340,6 +376,8 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime, QL
 
 void Widget::on_checkBoxCycle_toggled(bool checked)//点击 是否Cycle 复选框
 {
+    logFile<<(checked?"Cycle":"取消Cycle")<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
+
     ui->comboBoxEnd->setEnabled(!checked);//禁用终点框
 
     if(checked)//起点终点相同，即禁用状态
@@ -362,7 +400,8 @@ void Widget::on_pushButtonAbout_clicked()
 {
     QString strAbout="本程序为算法与数据结构的课程设计\n";
     strAbout+="参与人员：\nShantom\nrartxt\n";
-    strAbout+="联系方式：\nsalpha1345@gmail.com";
+    strAbout+="联系方式：\nsalpha1345@gmail.com\n";
+    strAbout+="源代码：\nhttps://github.com/Shantom/Travel";
     QMessageBox::about(this,"关于本程序",strAbout);
 }
 
@@ -438,9 +477,8 @@ void Widget::RecvTimerTick(int time)
 
     if(curStatus!=preStatus)//画图以及日志
     {
-//        qDebug()<<preStatus;
-//        if(curStatus.startsWith("到达终点"))
-            qDebug()<<curStatus;
+
+        logFile<<curStatus.toStdString()<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
         if(preStatus.startsWith("游玩中")||preStatus=="无"||preStatus.startsWith("到达终点"))
         {
             if(preStatus!="无"&&!preStatus.startsWith("到达终点"))
@@ -485,6 +523,7 @@ void Widget::RecvTimerTick(int time)
 
 void Widget::on_pushButtonPause_clicked()
 {
+    logFile<<"已暂停"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     m_timer->isPaused=!m_timer->isPaused;
     if(m_timer->isPaused)
     {
@@ -500,6 +539,7 @@ void Widget::on_pushButtonPause_clicked()
 
 void Widget::on_pushButtonRestart_clicked()
 {
+    logFile<<"已重开"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     days=1;//
     if(m_timer)
     {

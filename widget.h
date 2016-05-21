@@ -7,6 +7,8 @@
 #include <QMap>
 #include <QListWidgetItem>
 #include <QTimer>
+#include <fstream>
+using namespace std;
 
 namespace Ui {
 class Widget;
@@ -86,7 +88,7 @@ private:
     double iniTime;//with an extra 24 hours(i've forgot why)
     int days;
     Timer *m_timer;
-
+    ofstream logFile;
 };
 
 #endif // WIDGET_H
