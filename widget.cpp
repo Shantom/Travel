@@ -301,10 +301,11 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
 }
 
 /*计算出需要打印出来的字符串*/
-QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime, QList<Status> &statuses)
+QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
+                                       QList<Status> &statuses)
 {
     Graph G;
-    G.CreateGraph_MinCost();
+    G.CreateGraph();
     vector<QString> route;
     vector<QString> midCities;
 

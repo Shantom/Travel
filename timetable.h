@@ -23,7 +23,7 @@ class TimeTable
 public:
     TimeTable();
     ~TimeTable();
-    static int getMinPrice(QString start, QString goal);
+    static vector<Info> getInfos(QString start, QString goal);
     static Info getInfo_MinCost(QString start, QString goal);
 private:
     QSqlDatabase db;
