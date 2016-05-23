@@ -11,6 +11,15 @@ using namespace std;
 Graph::Graph()
 {
     TimeTable T;
+    vertex.assign({"北京","天津","成都","哈尔滨","大连","武汉",
+                   "银川","呼和浩特","乌鲁木齐",
+                   "济南","西安","台北","六安"});
+    int i=0;
+    for(auto a:vertex)
+    {
+        cityToInt[a]=i++;
+    }
+
 }
 
 double time2Double(QTime t)
@@ -23,7 +32,7 @@ double time2Double(QTime t)
 //vector<QString>rout;//路线数组
 
 /*重要：该算法只对强连通图有效*/
-int Graph::LeastCost(QString start_city, QString end_city, vector<QString> &mid_city, int isOrdered, vector<QString> &rout)//返回最少费用
+int Graph::LeastCost(QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout)//返回最少费用
 {
     int minCost = 0;
     int min_cost = A_BIG_INT;
@@ -119,7 +128,7 @@ int Graph::Dijkstra1(QString start_city, QString end_city, vector<QString> &out)
     for (v = 0; v < numVertex; v++)
     {
         final[v] = 0;
-        D[v] = arc[v_start][v].empty()?A_BIG_INT:arc[v_start][v][0].cost;
+        D[v] = arc[v_start][v].empty()?A_BIG_INT:arc[v_start][v][0].price;
         P[v] = v_start;
     }
     final[v_start] = 1;
@@ -154,9 +163,9 @@ int Graph::Dijkstra1(QString start_city, QString end_city, vector<QString> &out)
         //以k为前驱，修正当前最短路径及距离
         for (w = 0; w < numVertex; w++)
         {
-            if (!final[w] && (min + (arc[k][w].empty()?A_BIG_INT:arc[k][w][0].cost) < D[w]))
+            if (!final[w] && (min + (arc[k][w].empty()?A_BIG_INT:arc[k][w][0].price) < D[w]))
             {
-                D[w] = min + arc[k][w][0].cost;
+                D[w] = min + arc[k][w][0].price;
                 P[w] = k;
             }
         }
@@ -330,7 +339,7 @@ int Graph::Dijkstra2(QString start_city, QString end_city,
 }
 
 int Graph::LeastTime(double start_time,QString start_city, QString end_city,
-                     vector<QString> &mid_city, int isOrdered, vector<QString> &rout)//返回最少费用
+                     vector<QString> &mid_city, bool isOrdered, vector<QString> &rout)//返回最少费用
 {
     double temptime = start_time;
     int minTime = 0;
@@ -408,11 +417,32 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
         return rsl;
     }
 }
+
+Info Graph::getInfo_MinTime(QString start, QString goal, QTime curTime)
+{
+    vector<EdgeType> tmpEdges=arc[cityToInt[start]][cityToInt[goal]];
+
+    Info tmp;
+    tmp.arrivecity=goal;
+    tmp.departcity=start;
+
+    for(EdgeType &a:tmpEdges)
+    {
+        a.start_time=a.start_time.addMSecs(-curTime.msecsSinceStartOfDay());
+    }
+    sort(tmpEdges.begin(),tmpEdges.end(),[](EdgeType a,EdgeType b){return a.start_time<b.start_time;});
+
+    tmpEdges[0].start_time=tmpEdges[0].start_time.addMSecs(curTime.msecsSinceStartOfDay());
+    tmp.arrivetime=tmpEdges[0].end_time;
+    tmp.departtime=tmpEdges[0].start_time;
+    tmp.price=tmpEdges[0].price;
+    tmp.trainnumber=tmpEdges[0].trainnumber;
+    return tmp;
+
+}
 void Graph::CreateGraph()
 {
-    vertex.assign({"北京","天津","成都","哈尔滨","大连","武汉",
-                   "银川","呼和浩特","乌鲁木齐",
-                   "济南","西安","台北","六安"});
+
     numVertex=vertex.size();
 
     //建立有向网的邻接矩阵表示
@@ -427,7 +457,8 @@ void Graph::CreateGraph()
                 for(auto a:tmpInfo)
                 {
                     EdgeType tmpEdge;
-                    tmpEdge.cost=a.price;
+                    tmpEdge.trainnumber=a.trainnumber;
+                    tmpEdge.price=a.price;
                     tmpEdge.start_time=a.departtime;
                     tmpEdge.end_time=a.arrivetime;
                     arc[i][j].push_back(tmpEdge);

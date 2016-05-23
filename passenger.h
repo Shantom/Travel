@@ -9,7 +9,6 @@ struct Status
 {
     QString transport;//当前交通工具
     QString curCity;//当前城市
-    //QString nextMove;//下一步
     double startTime;//开始时间
 };
 

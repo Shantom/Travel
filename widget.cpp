@@ -48,6 +48,7 @@ Widget::Widget(QWidget *parent) :
     ui->radioButtonFare->setChecked(true);
 
     ui->checkBoxSequence->setChecked(false);//默认有顺序
+    on_checkBoxSequence_toggled(false);
     ui->doubleSpinBoxLimit->setValue(10);//默认限时十个小时
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
@@ -277,7 +278,7 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
         }
         else if(m_Psg.getPolicy()==Passenger::minTime)
         {
-            ;
+            detailRout=getRouteString_MinCost(m_Psg,stayTime,statuses);
         }
         else
         {
@@ -314,21 +315,29 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
     {
         midCities.push_back(a.first);
     }
-
-    int cost=G.LeastCost(Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
+    int cost;
+    double time;
+    if(Psg.getPolicy()==Passenger::minCost)
+        cost=G.LeastCost(Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
+    else if(Psg.getPolicy()==Passenger::minTime)
+        time=G.LeastTime(0,Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
 
     QString detailRout;
 
     QTime preArriTime(23,59,59);//上一个城市的到达时间
     int day=0;
     size_t j=0;//停留时间的标尺
-    Info iniInfo=TimeTable::getInfo_MinCost(route[0],route[1]);
+
+    Info iniInfo;
+    if(Psg.getPolicy()==Passenger::minCost)
+        iniInfo=TimeTable::getInfo_MinCost(route[0],route[1]);
+    else if(Psg.getPolicy()==Passenger::minTime)
+        iniInfo=G.getInfo_MinTime(route[0],route[1],preArriTime);
+
     iniTime=iniInfo.departtime.hour()+double(iniInfo.departtime.minute())/60+24;
 
     for(auto i=route.begin();i<route.end()-1;++i)//route保存包括起点终点的所有城市名
     {
-
-        Info section=TimeTable::getInfo_MinCost(*i,*(i+1));
 
 
         QTime tmp=preArriTime;
@@ -336,6 +345,14 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
         {
             preArriTime=preArriTime.addSecs(3600*stayTime.at(j++));//加上停留时间
         }
+
+        Info section;
+        if(Psg.getPolicy()==Passenger::minCost)
+            section=TimeTable::getInfo_MinCost(*i,*(i+1));
+        else if(Psg.getPolicy()==Passenger::minTime)
+            section=G.getInfo_MinTime(*i,*(i+1),preArriTime);
+
+
         if(preArriTime>section.departtime||preArriTime<tmp)//判断是否需要第二天再走
         {
             day++;
@@ -369,8 +386,11 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
         statuses.append(curStatus);
 
     }
+    if(Psg.getPolicy()==Passenger::minCost)
+        detailRout+=(Widget::tr("总费用:%1").arg(cost));
+    else if(Psg.getPolicy()==Passenger::minTime)
+        detailRout+=(Widget::tr("总时间:%1").arg(time));
 
-    detailRout+=(Widget::tr("总费用:%1").arg(cost));
 
     return detailRout;
 }

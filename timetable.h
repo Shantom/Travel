@@ -7,6 +7,7 @@
 #include <QTime>
 #include <QDebug>
 
+using namespace std;
 struct Info
 {
     QString trainnumber;
