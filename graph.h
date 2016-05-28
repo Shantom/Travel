@@ -12,10 +12,14 @@ using namespace std;
 
 struct EdgeType {
     int price = A_BIG_INT;
-    QTime start_time,end_time;
+    QTime start_time;
+    QTime end_time;
     QString trainnumber;
+    QString departcity;
+    QString arrivecity;
+    int id;
 };
-struct Info;
+//struct EdgeType;
 //邻接矩阵
 class Graph {
 public:
@@ -23,10 +27,10 @@ public:
     void CreateGraph();
 
     int Dijkstra1(QString start_city, QString end_city, vector<QString> &out);
-    int Dijkstra2(QString start_city, QString end_city, vector<QString> &out, double start_time);
+    int Dijkstra2(QString start_city, QString end_city, vector<QString> &out, double start_time, vector<EdgeType> &edgeList);
     int LeastCost(QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout);
-    int LeastTime(double start_time, QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout);
-    Info getInfo_MinTime(QString start, QString goal,QTime curTime);
+    int LeastTime(double start_time, QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout,vector<EdgeType> &edgeList);
+    EdgeType getInfo_MinTime(QString start, QString goal,QTime curTime);
 private:
     vector<QString> vertex;//城市名表
     vector<EdgeType> arc[100][100];//邻接矩阵，可看作边表

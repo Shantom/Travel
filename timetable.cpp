@@ -34,19 +34,19 @@ TimeTable::~TimeTable()
     //db.close();
 }
 
-vector<Info> TimeTable::getInfos(QString start,QString goal)
+vector<EdgeType> TimeTable::getInfos(QString start,QString goal)
 {
     QSqlQuery query;
     query.exec(QString("SELECT price, departtime, arrivetime,trainnumber FROM travel WHERE departcity = '%1' "
                        "AND arrivecity = '%2' order by price").arg(full2Short[start],full2Short[goal]));
-    vector<Info> rsl;
+    vector<EdgeType> rsl;
     while(query.next())
     {
-        Info tmp;
+        EdgeType tmp;
         tmp.trainnumber=query.value(3).toString();
         tmp.price=query.value(0).toInt();
-        tmp.departtime=query.value(1).toTime();
-        tmp.arrivetime=query.value(2).toTime();
+        tmp.start_time=query.value(1).toTime();
+        tmp.end_time=query.value(2).toTime();
         tmp.departcity=start;
         tmp.arrivecity=goal;
         rsl.push_back(tmp);
@@ -54,19 +54,19 @@ vector<Info> TimeTable::getInfos(QString start,QString goal)
     return rsl;
 }
 
-Info TimeTable::getInfo_MinCost(QString start, QString goal)
+EdgeType TimeTable::getInfo_MinCost(QString start, QString goal)
 {
     QSqlQuery query;
     query.exec(QString("SELECT trainnumber, departtime, arrivetime, price, id  FROM travel "
                        "WHERE departcity = '%1' AND arrivecity = '%2' order by price")
                .arg(full2Short[start],full2Short[goal]));
     query.next();
-    Info tmp;
+    EdgeType tmp;
     tmp.trainnumber=query.value(0).toString();
     tmp.departcity=start;
     tmp.arrivecity=goal;
-    tmp.departtime=query.value(1).toTime();
-    tmp.arrivetime=query.value(2).toTime();
+    tmp.start_time=query.value(1).toTime();
+    tmp.end_time=query.value(2).toTime();
     tmp.price=query.value(3).toInt();
     tmp.id=query.value(4).toInt();
     return tmp;

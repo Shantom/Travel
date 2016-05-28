@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <QString>
+#include <QMap>
 using namespace std;
 
 
@@ -189,7 +190,7 @@ int Graph::Dijkstra1(QString start_city, QString end_city, vector<QString> &out)
 
 }
 int Graph::Dijkstra2(QString start_city, QString end_city,
-                     vector<QString> &out , double start_time)
+                     vector<QString> &out , double start_time,vector<EdgeType> &edgeList)
 {
 
     int P[100];  // P是各点的前驱节点的序号
@@ -209,6 +210,7 @@ int Graph::Dijkstra2(QString start_city, QString end_city,
     while (vertex[v_end] != end_city)
         v_end++;
 
+    QMap<QPair<int,int>,EdgeType> store;
     //初始化
     for (v = 0; v < numVertex; v++)
     {
@@ -226,16 +228,50 @@ int Graph::Dijkstra2(QString start_city, QString end_city,
 
                 //如果 end_time < start_time，则到达时间要+24
                 if(i->start_time < i->end_time)
-                    D[v] =D[v] > time2Double(i->end_time) ? time2Double(i->end_time):D[v];
+                {
+                    if(D[v] > time2Double(i->end_time))
+                    {
+                        D[v]=time2Double(i->end_time);
+                        store[QPair<int,int>{v_start,v}]=*i;
+                    }
+//                    D[v] =D[v] > time2Double(i->end_time) ? time2Double(i->end_time):D[v];
+                }
                 else
-                    D[v] = D[v] > (time2Double(i->end_time) + 24) ? (time2Double(i->end_time) + 24):D[v];
+                {
+                    if(D[v] > time2Double(i->end_time) + 24)
+                    {
+                        D[v]=time2Double(i->end_time) + 24;
+                        store[QPair<int,int>{v_start,v}]=*i;
+                    }
+
+                }
+//                    D[v] = D[v] > (time2Double(i->end_time) + 24) ? (time2Double(i->end_time) + 24):D[v];
+
             }
             else//过一夜看明天的车次有没有先到达的
             {
                 if(i->start_time < i->end_time)
-                    D[v] = D[v] > (time2Double(i->end_time) + 24) ? (time2Double(i->end_time) + 24):D[v];
+                {
+                    if(D[v] > time2Double(i->end_time) + 24)
+                    {
+                        D[v]=time2Double(i->end_time) + 24;
+                        store[QPair<int,int>{v_start,v}]=*i;
+                    }
+
+                }
+
+//                    D[v] = D[v] > (time2Double(i->end_time) + 24) ? (time2Double(i->end_time) + 24):D[v];
                 else
-                    D[v] = D[v] > (time2Double(i->end_time) + 48) ? (time2Double(i->end_time) + 48):D[v];
+                {
+                    if(D[v] > time2Double(i->end_time) + 48)
+                    {
+                        D[v]=time2Double(i->end_time) + 48;
+                        store[QPair<int,int>{v_start,v}]=*i;
+                    }
+
+                }
+
+//                    D[v] = D[v] > (time2Double(i->end_time) + 48) ? (time2Double(i->end_time) + 48):D[v];
             }
         }
     }
@@ -295,11 +331,13 @@ int Graph::Dijkstra2(QString start_city, QString end_city,
                         {
                             D[w] = p;
                             P[w] = k;
+                            store[QPair<int,int>{k,w}]=(*i);
                         }
                     if((i->start_time >= i->end_time)&&(D[w] < p+24))//c
                         {
                             D[w] = p + 24;
                             P[w] = k;
+                            store[QPair<int,int>{k,w}]=(*i);
                         }
                 }
 
@@ -310,36 +348,40 @@ int Graph::Dijkstra2(QString start_city, QString end_city,
                     {
                         D[w] = p;
                         P[w] = k;
+                        store[QPair<int,int>{k,w}]=(*i);
                     }
                     if((i->start_time >= i->end_time)&&(D[w] > p+24))//c
                     {
                         D[w] = p + 24;
                         P[w] = k;
+                        store[QPair<int,int>{k,w}]=(*i);
                     }
                 }
             }
         }
     }
-
     //找出路径
     //out数组存放路径节点序号， temp数组存放倒叙
     int temp[100];
     int t = v_end;
     i = v_end;
+    edgeList.push_back(store[QPair<int,int>{P[t],t}]);
     for (i = 0; P[t] != v_start; i++)
     {
         temp[i] = P[t];
         t = P[t];
+        edgeList.push_back(store[QPair<int,int>{P[t],t}]);
     }
     for (; i > 0; i--)
         out.push_back(vertex[temp[i - 1]]);
+    std::reverse(edgeList.begin(),edgeList.end());
 
     return D[v_end];//最少时间
 
 }
 
 int Graph::LeastTime(double start_time,QString start_city, QString end_city,
-                     vector<QString> &mid_city, bool isOrdered, vector<QString> &rout)//返回最少费用
+                     vector<QString> &mid_city, bool isOrdered, vector<QString> &rout,vector<EdgeType> &edgeList)//返回最少费用
 {
     double temptime = start_time;
     int minTime = 0;
@@ -350,6 +392,7 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
 
     if (!mid_city.empty())  //如果有中间城市
     {
+        vector<EdgeType> tmpEdgeList,partEdge;
         if (!isOrdered)  // 无顺序
         {
             sort(mid_city.begin(), mid_city.end());
@@ -367,9 +410,11 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
                 minTime=0;
                 for (auto i = all_city.begin(); i + 1 < all_city.end(); ++i)
                 {
-                    minTime = minTime - minTime%24 + Dijkstra2(*i, *(i + 1), part, start_time);
+                    minTime = minTime - minTime%24 + Dijkstra2(*i, *(i + 1), part, temptime,partEdge);
                     r.push_back(*i);
                     r.insert(r.end(), part.begin(), part.end());//将经过的路线追加到r上
+                    tmpEdgeList.insert(tmpEdgeList.end(),partEdge.begin(),partEdge.end());
+                    partEdge.clear();
                     part.clear();
                     temptime= minTime % 24;
                 }
@@ -379,8 +424,10 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
                 {
                     min_time = minTime;
                     rout.assign(r.begin(), r.end());//复制到rout里
+                    edgeList.assign(tmpEdgeList.begin(),tmpEdgeList.end());
                 }
                 r.clear();
+                tmpEdgeList.clear();
                 temptime = start_time;
             } while (next_permutation(mid_city.begin(), mid_city.end()));
             return min_time;
@@ -396,9 +443,11 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
             //计算时间
             for (auto i = all_city.begin(); i + 1 < all_city.end(); ++i)
             {
-                minTime = minTime - minTime%24 + Dijkstra2(*i, *(i + 1), part, start_time);
+                minTime = minTime - minTime%24 + Dijkstra2(*i, *(i + 1), part, start_time,partEdge);
                 r.push_back(*i);
                 r.insert(r.end(), part.begin(), part.end());//将经过的路线追加到r上
+                edgeList.insert(edgeList.end(),partEdge.begin(),partEdge.end());
+                partEdge.clear();
                 part.clear();
                 start_time = minTime % 24;
             }
@@ -412,17 +461,17 @@ int Graph::LeastTime(double start_time,QString start_city, QString end_city,
     else//没有中间城市
     {
         rout.push_back(start_city);
-        int rsl = Dijkstra2(start_city, end_city, rout, start_time);
+        int rsl = Dijkstra2(start_city, end_city, rout, start_time,edgeList);
         rout.push_back(end_city);
         return rsl;
     }
 }
 
-Info Graph::getInfo_MinTime(QString start, QString goal, QTime curTime)
+EdgeType Graph::getInfo_MinTime(QString start, QString goal, QTime curTime)
 {
     vector<EdgeType> tmpEdges=arc[cityToInt[start]][cityToInt[goal]];
 
-    Info tmp;
+    EdgeType tmp;
     tmp.arrivecity=goal;
     tmp.departcity=start;
 
@@ -439,8 +488,8 @@ Info Graph::getInfo_MinTime(QString start, QString goal, QTime curTime)
 
     tmpEdges[0].start_time=tmpEdges[0].start_time.addMSecs(curTime.msecsSinceStartOfDay());
     tmpEdges[0].end_time=tmpEdges[0].end_time.addMSecs(curTime.msecsSinceStartOfDay());
-    tmp.arrivetime=tmpEdges[0].end_time;
-    tmp.departtime=tmpEdges[0].start_time;
+    tmp.end_time=tmpEdges[0].end_time;
+    tmp.start_time=tmpEdges[0].start_time;
     tmp.price=tmpEdges[0].price;
     tmp.trainnumber=tmpEdges[0].trainnumber;
     return tmp;
@@ -459,14 +508,16 @@ void Graph::CreateGraph()
         {
             if(i!=j)
             {
-                vector<Info> tmpInfo=TimeTable::getInfos(vertex.at(i),vertex.at(j));
+                vector<EdgeType> tmpInfo=TimeTable::getInfos(vertex.at(i),vertex.at(j));
                 for(auto a:tmpInfo)
                 {
                     EdgeType tmpEdge;
                     tmpEdge.trainnumber=a.trainnumber;
                     tmpEdge.price=a.price;
-                    tmpEdge.start_time=a.departtime;
-                    tmpEdge.end_time=a.arrivetime;
+                    tmpEdge.start_time=a.start_time;
+                    tmpEdge.end_time=a.end_time;
+                    tmpEdge.arrivecity=vertex.at(j);
+                    tmpEdge.departcity=vertex.at(i);
                     arc[i][j].push_back(tmpEdge);
                 }
             }

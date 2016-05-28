@@ -317,10 +317,11 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
     }
     int cost;
     double time;
+    vector<EdgeType> edgeList;
     if(Psg.getPolicy()==Passenger::minCost)
         cost=G.LeastCost(Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
     else if(Psg.getPolicy()==Passenger::minTime)
-        time=G.LeastTime(0,Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route);
+        time=G.LeastTime(0,Psg.getStart(),Psg.getEnd(),midCities,Psg.isSequence(),route,edgeList);
 
     QString detailRout;
 
@@ -328,13 +329,13 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
     int day=0;
     size_t j=0;//停留时间的标尺
 
-    Info iniInfo;
+    EdgeType iniInfo;
     if(Psg.getPolicy()==Passenger::minCost)
         iniInfo=TimeTable::getInfo_MinCost(route[0],route[1]);
     else if(Psg.getPolicy()==Passenger::minTime)
         iniInfo=G.getInfo_MinTime(route[0],route[1],preArriTime);
 
-    iniTime=iniInfo.departtime.hour()+double(iniInfo.departtime.minute())/60+24;
+    iniTime=iniInfo.start_time.hour()+double(iniInfo.start_time.minute())/60+24;
 
     for(auto i=route.begin();i<route.end()-1;++i)//route保存包括起点终点的所有城市名
     {
@@ -346,14 +347,14 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
             preArriTime=preArriTime.addSecs(3600*stayTime.at(j++));//加上停留时间
         }
 
-        Info section;
+        EdgeType section;
         if(Psg.getPolicy()==Passenger::minCost)
             section=TimeTable::getInfo_MinCost(*i,*(i+1));
         else if(Psg.getPolicy()==Passenger::minTime)
             section=G.getInfo_MinTime(*i,*(i+1),preArriTime);
 
 
-        if(preArriTime>section.departtime||preArriTime<tmp)//判断是否需要第二天再走
+        if(preArriTime>section.start_time||preArriTime<tmp)//判断是否需要第二天再走
         {
             day++;
             detailRout+=(tr("第%1天").arg(day)+'\n');
@@ -363,18 +364,18 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
         //坐车时的状态
         curStatus.transport=section.trainnumber;
         curStatus.curCity=section.departcity+'-'+section.arrivecity;
-        curStatus.startTime=section.departtime.hour()+double(section.departtime.minute())/60+24*day-iniTime;
+        curStatus.startTime=section.start_time.hour()+double(section.start_time.minute())/60+24*day-iniTime;
         statuses.append(curStatus);
 
-        preArriTime=section.arrivetime;
+        preArriTime=section.end_time;
 
         detailRout+=(section.trainnumber+' ');
         detailRout+=(section.departcity+tr("到")+section.arrivecity+' ');
-        detailRout+=(section.departtime.toString("HH:mm")+tr("到")+section.arrivetime.toString("HH:mm"));
+        detailRout+=(section.start_time.toString("HH:mm")+tr("到")+section.end_time.toString("HH:mm"));
         detailRout+=(tr(" 费用：%1").arg(section.price));
         detailRout+=('\n');
 
-        if(section.arrivetime<section.departtime)//过夜了
+        if(section.end_time<section.start_time)//过夜了
         {
             day++;
             detailRout+=(tr("第%1天").arg(day)+'\n');
@@ -382,7 +383,7 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
         //停留时的状态
         curStatus.transport=((i+2)!=route.end())?"游玩中":"到达终点";
         curStatus.curCity=section.arrivecity;
-        curStatus.startTime=section.arrivetime.hour()+double(section.arrivetime.minute())/60+day*24-iniTime;
+        curStatus.startTime=section.end_time.hour()+double(section.end_time.minute())/60+day*24-iniTime;
         statuses.append(curStatus);
 
     }

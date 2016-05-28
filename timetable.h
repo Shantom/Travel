@@ -6,26 +6,27 @@
 #include <QMap>
 #include <QTime>
 #include <QDebug>
+#include "graph.h"
 
 using namespace std;
-struct Info
-{
-    QString trainnumber;
-    QString departcity;
-    QString arrivecity;
-    QTime departtime;
-    QTime arrivetime;
-    int price;
-    int id;
-};
+struct EdgeType;
+//{
+//    QString trainnumber;
+//    QString departcity;
+//    QString arrivecity;
+//    QTime start_time;
+//    QTime end_time;
+//    int price;
+//    int id;
+//};
 
 class TimeTable
 {
 public:
     TimeTable();
     ~TimeTable();
-    static vector<Info> getInfos(QString start, QString goal);
-    static Info getInfo_MinCost(QString start, QString goal);
+    static vector<EdgeType> getInfos(QString start, QString goal);
+    static EdgeType getInfo_MinCost(QString start, QString goal);
 private:
     QSqlDatabase db;
     static QMap<QString,QString> full2Short;
