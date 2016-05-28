@@ -429,10 +429,16 @@ Info Graph::getInfo_MinTime(QString start, QString goal, QTime curTime)
     for(EdgeType &a:tmpEdges)
     {
         a.start_time=a.start_time.addMSecs(-curTime.msecsSinceStartOfDay());
+        a.end_time=a.end_time.addMSecs(-curTime.msecsSinceStartOfDay());
     }
-    sort(tmpEdges.begin(),tmpEdges.end(),[](EdgeType a,EdgeType b){return a.start_time<b.start_time;});
+    sort(tmpEdges.begin(),tmpEdges.end(),[](EdgeType a,EdgeType b)->bool{
+        if((a.start_time>a.end_time&&b.start_time>a.end_time)||(a.start_time<a.end_time&&b.start_time<a.end_time))
+                return a.end_time<b.end_time;
+        else
+                return a.start_time<b.start_time;});
 
     tmpEdges[0].start_time=tmpEdges[0].start_time.addMSecs(curTime.msecsSinceStartOfDay());
+    tmpEdges[0].end_time=tmpEdges[0].end_time.addMSecs(curTime.msecsSinceStartOfDay());
     tmp.arrivetime=tmpEdges[0].end_time;
     tmp.departtime=tmpEdges[0].start_time;
     tmp.price=tmpEdges[0].price;
