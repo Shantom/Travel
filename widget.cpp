@@ -4,6 +4,7 @@
 #include "graph.h"
 #include "timetable.h"
 #include "timer.h"
+#include "timelimitcheapest.h"
 #include <QListWidgetItem>
 #include <QRegExp>
 #include <QMessageBox>
@@ -49,16 +50,18 @@ Widget::Widget(QWidget *parent) :
 
     ui->checkBoxSequence->setChecked(false);//默认有顺序
     on_checkBoxSequence_toggled(false);
-    ui->doubleSpinBoxLimit->setValue(10);//默认限时十个小时
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
     tmp.removeFirst();
     ui->comboBoxEnd->addItems(tmp);
     ui->doubleSpinBoxLimit->setSingleStep(0.5);//一步半小时
     ui->doubleSpinBoxLimit->setSuffix(" 小时");
+    ui->doubleSpinBoxLimit->setMaximum(999);
+    ui->doubleSpinBoxLimit->setValue(999);//默认限时十个小时
     ui->radioButtonFare->setChecked(true);//默认最少费用策略
     m_Psg.setPolicy(Passenger::minCost);
     ui->doubleSpinBoxLimit->setEnabled(false);
+//    ui->doubleSpinBoxLimit->set
     ui->doubleSpinBoxStay->setSuffix(" 小时");
     ui->doubleSpinBoxStay->setSingleStep(0.5);
     m_timer=nullptr;
@@ -282,7 +285,14 @@ void Widget::on_pushButtonStart_clicked()//点击开始按钮
         }
         else
         {
-            ;
+            TimeLimitCheapest TG(m_Psg);
+            if(!TG.AStar(statuses,detailRout))
+            {
+                QMessageBox::information(this,"未找到","未找到路线");//
+                return;
+               }
+
+            iniTime=13+24;
         }
         iniTime+=(days-1)*24;//for paused timer
         QMessageBox::information(this,"路线",detailRout);//
@@ -561,6 +571,7 @@ void Widget::on_pushButtonPause_clicked()
 
 void Widget::on_pushButtonRestart_clicked()
 {
+    clearPath();
     logFile<<"已重开"<<"\t"<<QTime::currentTime().toString().toStdString()<<endl;
     days=1;//
     if(m_timer)

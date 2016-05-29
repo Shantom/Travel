@@ -523,3 +523,19 @@ void Graph::CreateGraph()
             }
         }
 }
+
+EdgeType Graph::getInfo_MinCost(QString start, QString goal)
+{
+    int s=cityToInt[start];
+    int g=cityToInt[goal];
+    EdgeType tmp;
+    tmp.trainnumber=arc[s][g][0].trainnumber;
+    tmp.departcity=start;
+    tmp.arrivecity=goal;
+    tmp.start_time=arc[s][g][0].start_time;
+    tmp.end_time=arc[s][g][0].end_time;
+    tmp.price=arc[s][g][0].price;
+    tmp.id=arc[s][g][0].id;
+    return tmp;
+
+}

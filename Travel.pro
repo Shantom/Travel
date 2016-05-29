@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     passenger.cpp \
     timetable.cpp \
     graph.cpp \
-    timer.cpp
+    timer.cpp \
+    timelimitcheapest.cpp
 
 HEADERS  += widget.h \
     route.h \
@@ -29,7 +30,8 @@ HEADERS  += widget.h \
     timetable.h \
     graph.h \
     stable.h \
-    timer.h
+    timer.h \
+    timelimitcheapest.h
 
 FORMS    += widget.ui \
     route.ui

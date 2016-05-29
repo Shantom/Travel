@@ -31,7 +31,8 @@ public:
     int LeastCost(QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout);
     int LeastTime(double start_time, QString start_city, QString end_city, vector<QString> &mid_city, bool isOrdered, vector<QString> &rout,vector<EdgeType> &edgeList);
     EdgeType getInfo_MinTime(QString start, QString goal,QTime curTime);
-private:
+    EdgeType getInfo_MinCost(QString start, QString goal);
+protected:
     vector<QString> vertex;//城市名表
     vector<EdgeType> arc[100][100];//邻接矩阵，可看作边表
     int numVertex;//图中当前的顶点数
