@@ -48,7 +48,7 @@ Widget::Widget(QWidget *parent) :
     m_Psg.setEnd(cityList.at(1));
     ui->radioButtonFare->setChecked(true);
 
-    ui->checkBoxSequence->setChecked(false);//默认有顺序
+    ui->checkBoxSequence->setChecked(false);//默认没有顺序
     on_checkBoxSequence_toggled(false);
     ui->comboBoxStart->addItems(cityList);
     QStringList tmp=cityList;
@@ -341,7 +341,7 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
 
     EdgeType iniInfo;
     if(Psg.getPolicy()==Passenger::minCost)
-        iniInfo=TimeTable::getInfo_MinCost(route[0],route[1]);
+        iniInfo=G.getInfo_MinCost(route[0],route[1]);
     else if(Psg.getPolicy()==Passenger::minTime)
         iniInfo=G.getInfo_MinTime(route[0],route[1],preArriTime);
 
@@ -400,7 +400,7 @@ QString Widget::getRouteString_MinCost(Passenger Psg, QList<double> stayTime,
     if(Psg.getPolicy()==Passenger::minCost)
         detailRout+=(Widget::tr("总费用:%1").arg(cost));
     else if(Psg.getPolicy()==Passenger::minTime)
-        detailRout+=(Widget::tr("总时间:%1").arg(time));
+        detailRout+=(Widget::tr("总时间:%1").arg(time-iniTime+24));
 
 
     return detailRout;

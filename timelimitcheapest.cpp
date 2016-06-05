@@ -1,6 +1,7 @@
 #include "timelimitcheapest.h"
 #include <queue>
 way totalPath[13];//保存各顶点到终点的最短路径
+bool flag;
 
 TimeLimitCheapest::TimeLimitCheapest(Passenger Psg)
 {
@@ -15,14 +16,15 @@ TimeLimitCheapest::TimeLimitCheapest(Passenger Psg)
 
 bool TimeLimitCheapest::AStar(QList<Status> &statuses,QString &detailRout)
 {
-    a_star n1;
+    flag=false;
+re: a_star n1;
     n1.v = start;
     n1.len = 0;
     priority_queue<a_star> q;
     q.push(n1);
     vector<int> ans(13);
     int Count=0;
-    while ((!q.empty())&&Count<=100000)//100000次以上就退出
+    while ((!q.empty())&&Count<=500000)//500000次以上就退出
     {
         a_star temp = q.top();
 
@@ -50,6 +52,13 @@ bool TimeLimitCheapest::AStar(QList<Status> &statuses,QString &detailRout)
             q.push(n2);
         }
         Count++;
+    }
+    if(!flag)
+    {
+        flag=!flag;
+        while(!q.empty())
+            q.pop();
+        goto re;
     }
     clearPath();
     return false;
@@ -142,12 +151,16 @@ bool TimeLimitCheapest::isValid(a_star tmp,QList<Status> &statuses,QString &deta
 
 
 
-    QTime preArriTime(23,59,59);//上一个城市的到达时间
+re: QTime preArriTime(23,59,59);//上一个城市的到达时间
     int day=0;
     size_t j=0;//停留时间的标尺
 
     EdgeType iniInfo;
-    iniInfo=getInfo_MinCost(vertex[all[0]],vertex[all[1]]/*,preArriTime*/);
+    if(!flag)
+        iniInfo=getInfo_MinCost(vertex[all[0]],vertex[all[1]]/*,preArriTime*/);
+    else
+        iniInfo=getInfo_MinTime(vertex[all[0]],vertex[all[1]],preArriTime);
+
 
     double iniTime=iniInfo.start_time.hour()+double(iniInfo.start_time.minute())/60+24;
 
@@ -198,7 +211,7 @@ bool TimeLimitCheapest::isValid(a_star tmp,QList<Status> &statuses,QString &deta
         statuses.append(curStatus);
 
     }
-    double time=day*24+statuses[statuses.size()-1].startTime;
+    double time=day*24+statuses[statuses.size()-1].startTime-iniTime+24;
     if(time>limit)
         return false;
     else

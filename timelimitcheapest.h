@@ -28,12 +28,12 @@ struct a_star                //A*搜索时的优先级队列
 class TimeLimitCheapest : public Graph
 {
 public:
-    struct cmp    //f(i)=g[i]+h(i)
-    {
-        bool operator()(const a_star &a,const a_star &b){
-        return a.len + totalPath[a.v].len > b.len + totalPath[b.v].len;//small first
-        }
-    };
+//    struct cmp    //f(i)=g[i]+h(i)
+//    {
+//        bool operator()(const a_star &a,const a_star &b){
+//        return a.len + totalPath[a.v].len > b.len + totalPath[b.v].len;//small first
+//        }
+//    };
     TimeLimitCheapest(Passenger Psg);
     bool AStar(QList<Status> &statuses,QString &detailRout);
 private:
